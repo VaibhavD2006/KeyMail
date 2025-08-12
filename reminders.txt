@@ -1,0 +1,10 @@
+REMEMBER TO ADD: 
+
+- Very faint purple gradient to the background of the hero section
+
+
+
+
+STUFF TO DO AT THE VERY END
+
+- Fix the pricing and features page to reflect what is actually offered in the MVP
