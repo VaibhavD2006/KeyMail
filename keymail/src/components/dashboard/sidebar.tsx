@@ -12,6 +12,9 @@ import {
   BarChart,
   HelpCircle,
   FileText,
+  Gift,
+  Target,
+  Home,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -27,6 +30,30 @@ const routes = [
     icon: Users,
     href: "/clients",
     color: "text-violet-500",
+  },
+  {
+    label: "Milestones",
+    icon: Gift,
+    href: "/milestones",
+    color: "text-purple-500",
+  },
+  {
+    label: "Matches",
+    icon: Target,
+    href: "/matches",
+    color: "text-orange-500",
+  },
+  {
+    label: "Showings",
+    icon: Calendar,
+    href: "/showings",
+    color: "text-blue-500",
+  },
+  {
+    label: "Listings",
+    icon: Home,
+    href: "/listings",
+    color: "text-green-500",
   },
   {
     label: "Emails",
