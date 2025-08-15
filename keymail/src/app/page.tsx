@@ -7,113 +7,235 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white py-4 w-full">
+      <header className="sticky top-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 py-4 w-full">
         <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <Link href="/" className="flex items-center">
-            <span className="text-2xl font-bold text-purple-600">{siteConfig.name}</span>
+            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3">
+              <span className="text-lg font-bold text-purple-600">K</span>
+            </div>
+            <span className="text-2xl font-bold text-white">{siteConfig.name}</span>
           </Link>
           <nav className="hidden md:flex items-center space-x-8">
             <Link
-              href="/features"
-              className="text-sm font-medium text-gray-600 hover:text-gray-900"
-            >
-              Features
-            </Link>
-            <Link
               href="/pricing"
-              className="text-sm font-medium text-gray-600 hover:text-gray-900"
+              className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
             >
               Pricing
             </Link>
             <Link
-              href="/testimonials"
-              className="text-sm font-medium text-gray-600 hover:text-gray-900"
-            >
-              Testimonials
-            </Link>
-            <Link
               href="/contact"
-              className="text-sm font-medium text-gray-600 hover:text-gray-900"
+              className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
             >
-              Contact
+              Contact us
             </Link>
           </nav>
           <div className="flex items-center space-x-4">
             <Link
               href="/login"
-              className="text-sm font-medium text-gray-600 hover:text-gray-900"
+              className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
             >
               Log in
             </Link>
             <Link
               href="/register"
-              className="text-sm font-medium text-white bg-purple-600 px-5 py-2 rounded-full hover:bg-purple-700 transition-colors"
+              className="text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 px-5 py-2 rounded-lg transition-colors"
             >
-              Get Started
+              Try now
             </Link>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="w-full py-20 md:py-28 bg-gradient-to-b from-purple-50 to-white">
-        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-center mx-auto leading-tight">
-            Automate Your Real Estate<br />Client Relationships
-          </h1>
-          <p className="mt-6 text-lg text-gray-600 max-w-3xl mx-auto">
-            Keep your clients engaged with AI-powered personalized emails. Build 
-            stronger relationships, save time, and never miss an important touchpoint.
-          </p>
-          <p className="mt-3 text-gray-500 italic">
-            (Made for Realtors by a Realtor)
-          </p>
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/register"
-              className="inline-flex items-center justify-center rounded-full bg-purple-600 px-8 py-3 text-base font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-            >
-              Start Free Trial →
-            </Link>
-            <p className="text-sm text-gray-500">No credit card required</p>
-          </div>
-          
-          <div className="mt-16 relative">
-            <div className="w-full max-w-6xl mx-auto rounded-xl shadow-xl overflow-hidden">
-              {/* Placeholder for dashboard image */}
-              <div className="aspect-[16/9] bg-gray-100 flex items-center justify-center">
-                <img 
-                  src="/dashboard-screenshot.png" 
-                  alt="KeyMail Dashboard" 
-                  className="w-full h-auto"
-                  onError={(e) => {
-                    // Fallback if image doesn't load
-                    const target = e.target as HTMLImageElement;
-                    target.onerror = null;
-                    target.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22800%22%20height%3D%22450%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cstyle%20type%3D%22text%2Fcss%22%3E%23holder_18c94140ee8%20text%20%7B%20fill%3A%23C4C4C4%3Bfont-weight%3Anormal%3Bfont-family%3A%27Inter%27%2C%20sans-serif%3Bfont-size%3A40pt%20%7D%20%3C%2Fstyle%3E%3C%2Fdefs%3E%3Cg%20id%3D%22holder_18c94140ee8%22%3E%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22%23F3F4F6%22%3E%3C%2Frect%3E%3Cg%3E%3Ctext%20x%3D%22277%22%20y%3D%22245%22%3EApplication%20Screenshot%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E';
-                  }}
-                />
+      <section className="relative w-full min-h-screen bg-gray-900 overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-20 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 left-0 w-64 h-64 bg-purple-400/20 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="relative container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
+            {/* Left Content - Moved further left for more text space */}
+            <div className="space-y-8 lg:-ml-16 xl:-ml-50">
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight max-w-5xl">
+                <span className="text-white">Meet <span className="text-purple-400">KeyMail</span></span>
+                <br /> <span className="text-white">The </span>
+                <span className="text-purple-400">AI Email platfrom</span>
+                <br />
+                <span className="text-white">Made for <span className="text-purple-400">Realtors</span></span>
+              </h1>
+              
+              <p className="text-xl text-gray-300 max-w-3xl leading-relaxed">
+                Built for real estate agents, teams, and agencies to organically grow their client relationships — on autopilot.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row items-start gap-4">
+                <Link
+                  href="/register"
+                  className="inline-flex items-center justify-center rounded-lg bg-purple-600 hover:bg-purple-700 px-8 py-4 text-lg font-semibold text-white transition-colors shadow-lg shadow-purple-600/25"
+                >
+                  Get started
+                </Link>
+                <Link
+                  href="/demo"
+                  className="inline-flex items-center justify-center rounded-lg border border-gray-600 bg-transparent hover:bg-gray-800 px-8 py-4 text-lg font-semibold text-white transition-colors"
+                >
+                  Get a demo
+                </Link>
+              </div>
+              
+              <div className="flex items-center space-x-4 pt-4">
+                <div className="flex -space-x-2">
+                  <div className="w-10 h-10 rounded-full bg-purple-500 border-2 border-gray-900"></div>
+                  <div className="w-10 h-10 rounded-full bg-purple-400 border-2 border-gray-900"></div>
+                  <div className="w-10 h-10 rounded-full bg-purple-300 border-2 border-gray-900"></div>
+                  <div className="w-10 h-10 rounded-full bg-purple-200 border-2 border-gray-900"></div>
+                </div>
+                <p className="text-gray-400">
+                  Join <span className="text-purple-400 font-semibold">1,200+</span> agents now
+                </p>
+              </div>
+            </div>
+            
+            {/* Right Content - Dashboard Preview - Kept in current position */}
+            <div className="relative">
+              {/* Top Right Dashboard - Client Management */}
+              <div className="absolute -top-36 -right-30 z-20 bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 p-4 shadow-2xl w-72">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  </div>
+                  <div className="text-xs text-gray-400">Client Hub</div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="bg-purple-600/20 border border-purple-500/30 rounded-lg p-2">
+                    <div className="text-purple-400 font-semibold text-xs">Active Clients</div>
+                    <div className="text-white text-lg font-bold">24</div>
+                  </div>
+                  <div className="bg-gray-600/30 rounded-lg p-2">
+                    <div className="text-gray-300 text-xs">Last Contact</div>
+                    <div className="text-white text-sm">2 days ago</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Dashboard */}
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 p-6 shadow-2xl">
+                {/* Dashboard Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  </div>
+                  <div className="text-sm text-gray-400">KeyMail Dashboard</div>
+                </div>
+                
+                {/* Dashboard Content */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Engagement Queue Panel */}
+                  <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-white font-semibold text-sm">Engagement Queue</h3>
+                      <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center">
+                        <span className="text-xs text-gray-400">i</span>
+                      </div>
+                    </div>
+                    <p className="text-gray-400 text-xs mb-4">Scroll to view suggestions from this session</p>
+                    
+                    <div className="space-y-3">
+                      <div className="bg-purple-600/20 border border-purple-500/30 rounded-lg p-3">
+                        <div className="text-purple-400 font-semibold text-sm">5 suggestions</div>
+                      </div>
+                      <div className="bg-gray-600/50 border border-gray-500/30 rounded-lg p-3">
+                        <div className="text-gray-300 font-semibold text-sm">0 posting</div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 p-3 bg-gray-600/30 rounded-lg">
+                      <div className="text-white text-sm font-medium">Sarah Johnson @sarahjohnson</div>
+                      <div className="text-gray-400 text-xs">11:56 PM · Mar 27, 2025</div>
+                    </div>
+                  </div>
+                  
+                  {/* Session Overview Panel */}
+                  <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-white font-semibold text-sm">Session Overview</h3>
+                      <button className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded-lg transition-colors">
+                        Stop session
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-2 text-xs">
+                      <div className="text-gray-400">Started Mar 28, 2025, 1:40 AM</div>
+                      <div className="text-gray-400">Search term: <span className="text-purple-400">real estate agents building relationships</span></div>
+                      <div className="text-gray-400">Time elapsed: <span className="text-purple-400">1:32</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Right Dashboard - Email Analytics */}
+              <div className="absolute -bottom-28 -right-30 z-20 bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 p-4 shadow-2xl w-72">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  </div>
+                  <div className="text-xs text-gray-400">Email Stats</div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="bg-green-600/20 border border-green-500/30 rounded-lg p-2">
+                    <div className="text-green-400 font-semibold text-xs">Open Rate</div>
+                    <div className="text-white text-lg font-bold">87%</div>
+                  </div>
+                  <div className="bg-blue-600/20 border border-blue-500/30 rounded-lg p-2">
+                    <div className="text-blue-400 text-xs">Response Rate</div>
+                    <div className="text-white text-sm">23%</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
+        
+        {/* Seamless gradient transition to next section */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-900 to-transparent"></div>
       </section>
 
       {/* Features Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-50">
+      <section className="relative w-full py-12 md:py-24 lg:py-32 bg-gray-900 overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-10 w-80 h-80 bg-purple-600/15 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-purple-400/15 rounded-full blur-3xl"></div>
+        </div>
+        
+        {/* Seamless gradient transition from hero */}
+        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-gray-900 to-transparent"></div>
+        
         <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-white">
                 Key Features
               </h2>
-              <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+              <p className="max-w-[900px] text-gray-300 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                 Everything you need to maintain strong client relationships
               </p>
             </div>
           </div>
           <div className="mx-auto grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 mt-12">
-            <div className="flex flex-col items-center space-y-2 rounded-lg border bg-white p-6 shadow-sm">
+            <div className="flex flex-col items-center space-y-2 rounded-lg border border-gray-700 bg-gray-800/50 backdrop-blur-sm p-6 shadow-lg">
               <div className="rounded-full bg-blue-100 p-3 text-blue-600">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -133,12 +255,12 @@ export default function HomePage() {
                   <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold">Client Management</h3>
-              <p className="text-center text-gray-500">
+              <h3 className="text-xl font-bold text-white">Client Management</h3>
+              <p className="text-center text-gray-300">
                 Easily add and manage client profiles with key details and relationship context.
               </p>
             </div>
-            <div className="flex flex-col items-center space-y-2 rounded-lg border bg-white p-6 shadow-sm">
+            <div className="flex flex-col items-center space-y-2 rounded-lg border border-gray-700 bg-gray-800/50 backdrop-blur-sm p-6 shadow-lg">
               <div className="rounded-full bg-green-100 p-3 text-green-600">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -159,12 +281,12 @@ export default function HomePage() {
                   <path d="M10 9H8" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold">AI Email Generation</h3>
-              <p className="text-center text-gray-500">
+              <h3 className="text-xl font-bold text-white">AI Email Generation</h3>
+              <p className="text-center text-gray-300">
                 Create personalized email templates for various occasions with AI assistance.
               </p>
             </div>
-            <div className="flex flex-col items-center space-y-2 rounded-lg border bg-white p-6 shadow-sm">
+            <div className="flex flex-col items-center space-y-2 rounded-lg border border-gray-700 bg-gray-800/50 backdrop-blur-sm p-6 shadow-lg">
               <div className="rounded-full bg-yellow-100 p-3 text-yellow-600">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -182,12 +304,12 @@ export default function HomePage() {
                   <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold">Approval System</h3>
-              <p className="text-center text-gray-500">
+              <h3 className="text-xl font-bold text-white">Approval System</h3>
+              <p className="text-center text-gray-300">
                 Review and approve emails before sending to maintain quality control.
               </p>
             </div>
-            <div className="flex flex-col items-center space-y-2 rounded-lg border bg-white p-6 shadow-sm">
+            <div className="flex flex-col items-center space-y-2 rounded-lg border border-gray-700 bg-gray-800/50 backdrop-blur-sm p-6 shadow-lg">
               <div className="rounded-full bg-purple-100 p-3 text-purple-600">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -205,12 +327,12 @@ export default function HomePage() {
                   <polyline points="22,6 12,13 2,6" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold">Email Integration</h3>
-              <p className="text-center text-gray-500">
+              <h3 className="text-xl font-bold text-white">Email Integration</h3>
+              <p className="text-center text-gray-300">
                 Connect with popular email services like Gmail, Outlook, and Mailchimp.
               </p>
             </div>
-            <div className="flex flex-col items-center space-y-2 rounded-lg border bg-white p-6 shadow-sm">
+            <div className="flex flex-col items-center space-y-2 rounded-lg border border-gray-700 bg-gray-800/50 backdrop-blur-sm p-6 shadow-lg">
               <div className="rounded-full bg-red-100 p-3 text-red-600">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -230,12 +352,12 @@ export default function HomePage() {
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold">Scheduling</h3>
-              <p className="text-center text-gray-500">
+              <h3 className="text-xl font-bold text-white">Scheduling</h3>
+              <p className="text-center text-gray-300">
                 Schedule emails for automated sending at the perfect time.
               </p>
             </div>
-            <div className="flex flex-col items-center space-y-2 rounded-lg border bg-white p-6 shadow-sm">
+            <div className="flex flex-col items-center space-y-2 rounded-lg border border-gray-700 bg-gray-800/50 backdrop-blur-sm p-6 shadow-lg">
               <div className="rounded-full bg-blue-100 p-3 text-blue-600">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -254,68 +376,84 @@ export default function HomePage() {
                   <path d="M6 20v-6" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold">Analytics</h3>
-              <p className="text-center text-gray-500">
+              <h3 className="text-xl font-bold text-white">Analytics</h3>
+              <p className="text-center text-gray-300">
                 Track email performance with detailed analytics and insights.
               </p>
             </div>
           </div>
         </div>
+        
+        {/* Seamless gradient transition to next section */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-900 to-transparent"></div>
       </section>
 
       {/* CTA Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-blue-600 text-white">
+      <section className="relative w-full py-12 md:py-24 lg:py-32 bg-gray-800 overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-10 right-20 w-72 h-72 bg-purple-600/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 left-20 w-80 h-80 bg-purple-500/15 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/3 right-1/4 w-56 h-56 bg-purple-400/20 rounded-full blur-3xl"></div>
+        </div>
+        
+        {/* Seamless gradient transition from features */}
+        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-gray-900 to-transparent"></div>
+        
         <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-white">
                 Ready to Grow Your Real Estate Business?
               </h2>
-              <p className="max-w-[600px] mx-auto text-blue-100 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+              <p className="max-w-[600px] mx-auto text-gray-300 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                 Join thousands of real estate agents who are building stronger client relationships with KeyMail.
               </p>
             </div>
             <div className="flex flex-col gap-2 min-[400px]:flex-row">
               <Link
                 href="/register"
-                className="inline-flex h-10 items-center justify-center rounded-md bg-white px-8 text-sm font-medium text-blue-600 shadow transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-600"
+                className="inline-flex h-10 items-center justify-center rounded-md bg-purple-600 hover:bg-purple-700 px-8 text-sm font-medium text-white shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-purple-600"
               >
                 Get Started for Free
               </Link>
               <Link
                 href="/pricing"
-                className="inline-flex h-10 items-center justify-center rounded-md border border-blue-500 bg-transparent px-8 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-300"
+                className="inline-flex h-10 items-center justify-center rounded-md border border-purple-500 bg-transparent px-8 text-sm font-medium text-white shadow-sm transition-colors hover:bg-purple-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-purple-300"
               >
                 View Pricing
               </Link>
             </div>
           </div>
         </div>
+        
+        {/* Seamless gradient transition to footer */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-800 to-transparent"></div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-6 md:py-0">
+      <footer className="border-t py-6 md:py-0 bg-gray-900 text-white">
         <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
-          <p className="text-center text-sm leading-loose text-gray-500 md:text-left">
+          <p className="text-center text-sm leading-loose text-gray-400 md:text-left">
             &copy; {new Date().getFullYear()} {siteConfig.name}. All rights
             reserved.
           </p>
           <div className="flex items-center space-x-4">
             <Link
               href="/terms"
-              className="text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
+              className="text-sm font-medium text-gray-400 transition-colors hover:text-white"
             >
               Terms
             </Link>
             <Link
               href="/privacy"
-              className="text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
+              className="text-sm font-medium text-gray-400 transition-colors hover:text-white"
             >
               Privacy
             </Link>
             <Link
               href="/contact"
-              className="text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
+              className="text-sm font-medium text-gray-400 transition-colors hover:text-white"
             >
               Contact
             </Link>
