@@ -653,18 +653,72 @@ export default function HomePage() {
               viewport={{ once: true }}
               className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6"
             >
-              <motion.input
-                whileFocus={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-                type="email"
-                placeholder="name@email.com"
-                className="px-6 py-4 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-[300px]"
-              />
+              <div className="relative">
+                <motion.input
+                  whileFocus={{ scale: 1.02 }}
+                  transition={{ duration: 0.2 }}
+                  type="email"
+                  placeholder="name@email.com"
+                  className="px-6 py-4 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-[300px] pr-12"
+                  id="email-input"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      const emailInput = document.getElementById('email-input') as HTMLInputElement;
+                      if (emailInput && emailInput.value.trim()) {
+                        // Basic email validation
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (emailRegex.test(emailInput.value.trim())) {
+                          localStorage.setItem('keymail_email_signup', emailInput.value.trim());
+                          window.location.href = '/register';
+                        } else {
+                          // Show error feedback
+                          emailInput.style.borderColor = '#EF4444';
+                          emailInput.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          emailInput.focus();
+                        }
+                      }
+                    }
+                  }}
+                />
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              </div>
               <motion.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.2 }}
                 className="px-8 py-4 bg-gray-900 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+                onClick={() => {
+                  const emailInput = document.getElementById('email-input') as HTMLInputElement;
+                  if (emailInput && emailInput.value.trim()) {
+                    // Basic email validation
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (emailRegex.test(emailInput.value.trim())) {
+                      // Store email in localStorage for demo purposes
+                      localStorage.setItem('keymail_email_signup', emailInput.value.trim());
+                      // Show success feedback
+                      emailInput.style.borderColor = '#10B981';
+                      emailInput.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                      // Navigate to registration page after brief delay
+                      setTimeout(() => {
+                        window.location.href = '/register';
+                      }, 500);
+                    } else {
+                      // Show error feedback
+                      emailInput.style.borderColor = '#EF4444';
+                      emailInput.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                      emailInput.focus();
+                    }
+                  } else {
+                    // Focus the input if empty
+                    emailInput?.focus();
+                    emailInput.style.borderColor = '#EF4444';
+                    emailInput.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                  }
+                }}
               >
                 Let's gooo
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -678,6 +732,9 @@ export default function HomePage() {
               whileTap={{ scale: 0.95 }}
               transition={{ duration: 0.2 }}
               className="px-10 py-4 bg-white hover:bg-gray-100 text-gray-900 font-semibold rounded-lg transition-colors"
+              onClick={() => {
+                window.location.href = '/register';
+              }}
             >
               Get started now
             </motion.button>
@@ -933,59 +990,191 @@ export default function HomePage() {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}
-        className="border-t py-6 md:py-0 bg-gray-900 text-white"
+        className="border-t border-gray-700 py-12 md:py-16 bg-gray-900 text-white"
       >
-        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
-          <motion.p 
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            viewport={{ once: true }}
-            className="text-center text-sm leading-loose text-gray-400 md:text-left"
-          >
-            &copy; {new Date().getFullYear()} {siteConfig.name}. All rights
-            reserved.
-          </motion.p>
+        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          {/* Main Footer Content */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 mb-8">
+            {/* Left Section - Brand Information */}
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              viewport={{ once: true }}
+              className="space-y-4"
+            >
+              {/* Logo and Brand Name */}
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                  <span className="text-lg font-bold text-purple-600">K</span>
+                </div>
+                <span className="text-2xl font-bold text-white">{siteConfig.name}</span>
+              </div>
+              
+              {/* Tagline/Description */}
+              <p className="text-gray-300 text-sm leading-relaxed max-w-xs">
+                AI-powered email automation for real estate professionals, bringing deep relationship expertise to every client interaction.
+              </p>
+              
+              {/* Social Media Icons */}
+              <div className="flex items-center space-x-4">
+                <motion.div
+                  whileHover={{ y: -2, scale: 1.1 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-8 h-8 border border-gray-400 rounded-lg flex items-center justify-center cursor-pointer hover:border-purple-400 transition-colors"
+                >
+                  <svg className="w-4 h-4 text-gray-400 hover:text-purple-400 transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                </motion.div>
+                <motion.div
+                  whileHover={{ y: -2, scale: 1.1 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-8 h-8 border border-gray-400 rounded-lg flex items-center justify-center cursor-pointer hover:border-purple-400 transition-colors"
+                >
+                  <svg className="w-4 h-4 text-gray-400 hover:text-purple-400 transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  </svg>
+                </motion.div>
+                <motion.div
+                  whileHover={{ y: -2, scale: 1.1 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-8 h-8 border border-gray-400 rounded-lg flex items-center justify-center cursor-pointer hover:border-purple-400 transition-colors"
+                >
+                  <svg className="w-4 h-4 text-gray-400 hover:text-purple-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </motion.div>
+              </div>
+            </motion.div>
+            
+            {/* Middle Section - Company and Legal Links */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="grid grid-cols-2 gap-8 md:gap-12"
+            >
+              {/* Company Column */}
+              <div className="space-y-4">
+                <h3 className="text-white font-semibold text-sm uppercase tracking-wider">Company</h3>
+                <div className="space-y-3">
+                  <motion.div
+                    whileHover={{ x: 5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Link
+                      href="/contact"
+                      className="text-gray-300 hover:text-white transition-colors text-sm"
+                    >
+                      Contact Us
+                    </Link>
+                  </motion.div>
+                  <motion.div
+                    whileHover={{ x: 5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Link
+                      href="/newsletter"
+                      className="text-gray-300 hover:text-white transition-colors text-sm"
+                    >
+                      Join Email List
+                    </Link>
+                  </motion.div>
+                </div>
+              </div>
+              
+              {/* Legal Column */}
+              <div className="space-y-4">
+                <h3 className="text-white font-semibold text-sm uppercase tracking-wider">Legal</h3>
+                <div className="space-y-3">
+                  <motion.div
+                    whileHover={{ x: 5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Link
+                      href="/privacy"
+                      className="text-gray-300 hover:text-white transition-colors text-sm"
+                    >
+                      Privacy Policy
+                    </Link>
+                  </motion.div>
+                  <motion.div
+                    whileHover={{ x: 5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Link
+                      href="/terms"
+                      className="text-gray-300 hover:text-white transition-colors text-sm"
+                    >
+                      Terms of Service
+                    </Link>
+                  </motion.div>
+                </div>
+              </div>
+            </motion.div>
+            
+            {/* Right Section - Additional Info (Optional) */}
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              viewport={{ once: true }}
+              className="space-y-4"
+            >
+              <h3 className="text-white font-semibold text-sm uppercase tracking-wider">Resources</h3>
+              <div className="space-y-3">
+                <motion.div
+                  whileHover={{ x: 5 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Link
+                    href="/blog"
+                    className="text-gray-300 hover:text-white transition-colors text-sm"
+                  >
+                    Blog
+                  </Link>
+                </motion.div>
+                <motion.div
+                  whileHover={{ x: 5 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Link
+                    href="/help"
+                    className="text-gray-300 hover:text-white transition-colors text-sm"
+                  >
+                    Help Center
+                  </Link>
+                </motion.div>
+                <motion.div
+                  whileHover={{ x: 5 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Link
+                    href="/pricing"
+                    className="text-gray-300 hover:text-white transition-colors text-sm"
+                  >
+                    Pricing
+                  </Link>
+                </motion.div>
+              </div>
+            </motion.div>
+          </div>
+          
+          {/* Bottom Section - Copyright */}
           <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
             viewport={{ once: true }}
-            className="flex items-center space-x-4"
+            className="pt-8 border-t border-gray-700"
           >
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Link
-                href="/terms"
-                className="text-sm font-medium text-gray-400 transition-colors hover:text-white"
-              >
-                Terms
-              </Link>
-            </motion.div>
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Link
-                href="/privacy"
-                className="text-sm font-medium text-gray-400 transition-colors hover:text-white"
-              >
-                Privacy
-              </Link>
-            </motion.div>
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Link
-                href="/contact"
-                className="text-sm font-medium text-gray-400 transition-colors hover:text-white"
-              >
-                Contact
-              </Link>
-            </motion.div>
+            <div className="text-center">
+              <p className="text-gray-400 text-sm">
+                © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
+              </p>
+            </div>
           </motion.div>
         </div>
       </motion.footer>
