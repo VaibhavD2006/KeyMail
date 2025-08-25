@@ -30,6 +30,21 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Emails table (needed by features and queries)
+export const emails = pgTable("emails", {
+  id: text("id").primaryKey().$defaultFn(() => createId()),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  clientId: text("client_id").references(() => clients.id),
+  subject: text("subject").notNull(),
+  content: text("content").notNull(),
+  status: text("status").default("draft"),
+  isFavorite: boolean("is_favorite").default(false),
+  scheduledDate: timestamp("scheduled_date"),
+  sentDate: timestamp("sent_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Clients table (enhanced for real estate)
 export const clients = pgTable("clients", {
   id: text("id").primaryKey().$defaultFn(() => createId()),
@@ -208,6 +223,7 @@ export const propertyMatches = pgTable("property_matches", {
 export const tables = {
   users,
   clients,
+  emails,
   emailTemplates,
   milestones,
   listings,
@@ -220,7 +236,6 @@ export const tables = {
 
 // Define relations
 export const userRelations = relations(users, ({ many }) => ({
-  accounts: many(accounts),
   clients: many(clients),
   emails: many(emails),
   emailTemplates: many(emailTemplates),

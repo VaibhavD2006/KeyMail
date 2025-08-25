@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Client } from "@/types";
@@ -20,7 +20,7 @@ interface Template {
   editedContent?: string | null;
 }
 
-export default function ComposeEmailPage() {
+function ComposeEmailPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const clientIdParam = searchParams.get("clientId");
@@ -224,4 +224,12 @@ export default function ComposeEmailPage() {
       </Card>
     </div>
   );
-} 
+}
+
+export default function ComposeEmailPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-6">Loading...</div>}>
+      <ComposeEmailPageContent />
+    </Suspense>
+  );
+}

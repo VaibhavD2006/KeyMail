@@ -26,7 +26,7 @@ export default function EditClientPage({ params }: EditClientPageProps) {
       setError(null);
       
       try {
-        const response = await fetch(`/api/clients/${params.id}`, {
+        const response = await fetch(`/api/crm/${params.id}`, {
           cache: 'no-store',
           next: { revalidate: 0 },
           headers: { 
@@ -76,7 +76,7 @@ export default function EditClientPage({ params }: EditClientPageProps) {
     setError(null);
     
     try {
-      const response = await fetch(`/api/clients/${params.id}`, {
+      const response = await fetch(`/api/crm/${params.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

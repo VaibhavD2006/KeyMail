@@ -26,7 +26,7 @@ export default function AddClientPage() {
         updatedAt: new Date().toISOString()
       };
 
-      const response = await fetch("/api/clients", {
+      const response = await fetch("/api/crm", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -47,7 +47,7 @@ export default function AddClientPage() {
       
       // Also save directly to localStorage as a backup
       if (data.data) {
-        clientStorage.addClient(data.data);
+        clientStorage.addClient(data.data as any);
       }
       
       // Navigate back to clients list
@@ -57,7 +57,7 @@ export default function AddClientPage() {
 
       // Add an explicit manual refetch
       try {
-        await fetch("/api/clients", {
+        await fetch("/api/crm", {
           cache: "no-store",
           headers: { 
             "Pragma": "no-cache",

@@ -26,7 +26,7 @@ export default function ClientPage({ params }: ClientPageProps) {
       setError(null);
       
       try {
-        const response = await fetch(`/api/clients/${params.id}`, {
+        const response = await fetch(`/api/crm/${params.id}`, {
           cache: 'no-store',
           next: { revalidate: 0 },
           headers: { 
@@ -86,7 +86,7 @@ export default function ClientPage({ params }: ClientPageProps) {
     setIsDeleting(true);
     
     try {
-      const response = await fetch(`/api/clients/${params.id}`, {
+      const response = await fetch(`/api/crm/${params.id}`, {
         method: "DELETE",
       });
       

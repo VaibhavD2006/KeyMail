@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { EmailList } from "@/components/email/list";
@@ -24,7 +24,7 @@ import {
 import { PenSquare, Search, X, Filter } from "lucide-react";
 import { Email } from "@/types";
 
-export default function EmailsPage() {
+function EmailsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -373,4 +373,12 @@ export default function EmailsPage() {
       />
     </div>
   );
-} 
+}
+
+export default function EmailsPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-8">Loading emails...</div>}>
+      <EmailsPageContent />
+    </Suspense>
+  );
+}

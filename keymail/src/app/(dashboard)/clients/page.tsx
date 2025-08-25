@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ClientList } from "@/components/client/list";
 import { Client } from "@/types";
 import { clientStorage } from "@/lib/utils";
 
-export default function ClientsPage() {
+function ClientsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -16,6 +16,8 @@ export default function ClientsPage() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [tags, setTags] = useState<{ _id: string; count: number }[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   
   // Get search and filter parameters from URL
   const search = searchParams.get("search") || "";
@@ -45,21 +47,21 @@ export default function ClientsPage() {
         // Build query string with parameters
         const queryParams = new URLSearchParams();
         queryParams.append("page", page.toString());
-        queryParams.append("limit", "12");
+        queryParams.append("pageSize", "12");
         
         if (search) {
-          queryParams.append("search", search);
-        }
-        
-        if (relationshipLevel !== "all") {
-          queryParams.append("relationshipLevel", relationshipLevel);
+          queryParams.append("q", search);
         }
         
         if (tag) {
           queryParams.append("tag", tag);
         }
+        // Include multi-tag filters
+        for (const t of selectedTags) {
+          queryParams.append("tag", t);
+        }
         
-        const response = await fetch(`/api/clients?${queryParams.toString()}`, {
+        const response = await fetch(`/api/crm?${queryParams.toString()}`, {
           cache: 'no-store', 
           next: { revalidate: 0 },
           headers: { 
@@ -78,8 +80,8 @@ export default function ClientsPage() {
           throw new Error(data.error || "Failed to fetch clients");
         }
         
-        setClients(data.data.items);
-        setTotalPages(Math.ceil(data.data.total / data.data.limit));
+        setClients(data.data.items as any);
+        setTotalPages(Math.ceil(data.data.total / data.data.pageSize));
         
         // Also update localStorage
         if (data.data.items.length > 0) {
@@ -102,7 +104,22 @@ export default function ClientsPage() {
     };
     
     fetchClients();
-  }, [page, search, relationshipLevel, tag]);
+  }, [page, search, relationshipLevel, tag, selectedTags.join(",")]);
+
+  // Fetch tag analytics
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const res = await fetch('/api/crm/tags', { cache: 'no-store', next: { revalidate: 0 } });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json?.data) setTags(json.data);
+      } catch (e) {
+        console.warn('Failed to load tags');
+      }
+    };
+    loadTags();
+  }, []);
   
   // Add an effect to refresh data when the component gains focus (user navigates back)
   useEffect(() => {
@@ -114,21 +131,20 @@ export default function ClientsPage() {
           try {
             const queryParams = new URLSearchParams();
             queryParams.append("page", page.toString());
-            queryParams.append("limit", "12");
+            queryParams.append("pageSize", "12");
             
             if (search) {
-              queryParams.append("search", search);
-            }
-            
-            if (relationshipLevel !== "all") {
-              queryParams.append("relationshipLevel", relationshipLevel);
+              queryParams.append("q", search);
             }
             
             if (tag) {
               queryParams.append("tag", tag);
             }
+            for (const t of selectedTags) {
+              queryParams.append("tag", t);
+            }
             
-            const response = await fetch(`/api/clients?${queryParams.toString()}`, {
+            const response = await fetch(`/api/crm?${queryParams.toString()}`, {
               cache: 'no-store',
               next: { revalidate: 0 },
               headers: { 
@@ -147,8 +163,8 @@ export default function ClientsPage() {
               throw new Error(data.error || "Failed to fetch clients");
             }
             
-            setClients(data.data.items);
-            setTotalPages(Math.ceil(data.data.total / data.data.limit));
+            setClients(data.data.items as any);
+            setTotalPages(Math.ceil(data.data.total / data.data.pageSize));
           } catch (err) {
             console.error("Error refreshing clients:", err);
           }
@@ -169,7 +185,7 @@ export default function ClientsPage() {
   
   const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`/api/clients/${id}`, {
+      const response = await fetch(`/api/crm/${id}`, {
         method: "DELETE",
       });
       
@@ -203,6 +219,38 @@ export default function ClientsPage() {
         </Link>
       </div>
       
+      {/* Tag Analytics */}
+      {tags.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-semibold text-gray-700">Popular Tags</h2>
+            {selectedTags.length > 0 && (
+              <button
+                onClick={() => setSelectedTags([])}
+                className="text-xs text-purple-600 hover:underline"
+              >
+                Clear selected
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {tags.map(t => {
+              const active = selectedTags.includes(t._id);
+              return (
+                <button
+                  key={t._id}
+                  onClick={() => setSelectedTags(prev => active ? prev.filter(x => x !== t._id) : [...prev, t._id])}
+                  className={`text-xs px-2 py-1 rounded border ${active ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                  title={`${t.count} contact${t.count !== 1 ? 's' : ''}`}
+                >
+                  {t._id} <span className="opacity-60">({t.count})</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {error && (
         <div className="bg-red-50 text-red-500 p-4 rounded-md mb-6">
           <p>{error}</p>
@@ -246,4 +294,12 @@ export default function ClientsPage() {
       )}
     </div>
   );
-} 
+}
+
+export default function ClientsPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-8"><div className="text-center py-12"><div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto"></div><p className="mt-4 text-gray-500">Loading clients...</p></div></div>}>
+      <ClientsPageContent />
+    </Suspense>
+  );
+}
