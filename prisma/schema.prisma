@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  id         String      @id @default(uuid())
+  name       String
+  email      String      @unique
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  emails     Email[]     @relation("ClientEmails")
+  milestones Milestone[] @relation("ClientMilestones")
+}
+
+model Email {
+  id         String     @id @default(uuid())
+  subject    String
+  body       String
+  to         String
+  from       String
+  sentAt     DateTime?
+  client     Client?    @relation("ClientEmails", fields: [clientId], references: [id])
+  clientId   String?
+  template   Template?  @relation(fields: [templateId], references: [id])
+  templateId String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Template {
+  id        String    @id @default(uuid())
+  name      String
+  subject   String
+  body      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  emails    Email[]
+}
+
+model Milestone {
+  id        String   @id @default(uuid())
+  title     String
+  date      DateTime
+  client    Client?  @relation("ClientMilestones", fields: [clientId], references: [id])
+  clientId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
