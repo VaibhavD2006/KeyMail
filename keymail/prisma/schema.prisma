@@ -16,6 +16,7 @@ model Client {
   updatedAt  DateTime    @updatedAt
   emails     Email[]     @relation("ClientEmails")
   milestones Milestone[] @relation("ClientMilestones")
+  @@map("clients")
 }
 
 model Email {

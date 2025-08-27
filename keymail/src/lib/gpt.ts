@@ -1,18 +1,15 @@
-import { OpenAIApi, Configuration } from 'openai';
+import OpenAI from "openai";
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-const openai = new OpenAIApi(configuration);
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function generateEmail({ prompt, template }: { prompt: string; template: string }) {
-  const completion = await openai.createChatCompletion({
-    model: 'gpt-4-1106-preview',
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
     messages: [
-      { role: 'system', content: `You are an expert email writer. Use the following template: ${template}` },
-      { role: 'user', content: prompt },
+      { role: "system", content: `You are an expert email writer. Use the following template: ${template}` },
+      { role: "user", content: prompt },
     ],
     max_tokens: 500,
   });
-  return completion.data.choices[0].message?.content || '';
+  return completion.choices[0]?.message?.content || "";
 }
