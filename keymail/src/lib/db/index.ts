@@ -41,9 +41,9 @@ try {
   // PostgreSQL is disabled - using MongoDB
   console.log("📦 Using MongoDB for database operations");
   
-  // Create a mock client for compatibility
+  // Create a mock client for compatibility (DO NOT initialize Drizzle)
   client = createMockClient();
-  db = drizzle(client, { schema });
+  db = null as any; // No Drizzle initialization when using MongoDB
   connectionError = new Error("PostgreSQL disabled - using MongoDB");
   
   /* Uncomment to re-enable PostgreSQL:
@@ -80,9 +80,9 @@ try {
   connectionError = error;
   console.error("Failed to initialize database connection:", error);
   
-  // Create a mock client with localStorage fallback
+  // Create a mock client with localStorage fallback (DO NOT initialize Drizzle)
   client = createMockClient();
-  db = drizzle(client, { schema });
+  db = null as any; // No Drizzle initialization when using MongoDB
   console.error("CRITICAL: Database connection unavailable. Using MongoDB instead.");
 }
 

@@ -16,8 +16,7 @@ const ClientPreferencesSchema = new Schema({
 const ClientSchema = new Schema(
   {
     userId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: true,
       index: true,
     },
@@ -66,6 +65,33 @@ const ClientSchema = new Schema(
     },
     lastContactDate: {
       type: Date,
+    },
+    // Property preferences for matching
+    priceRangeMin: {
+      type: Number,
+    },
+    priceRangeMax: {
+      type: Number,
+    },
+    preferredNeighborhoods: {
+      type: [String],
+      default: [],
+    },
+    preferredPropertyTypes: {
+      type: [String],
+      default: [],
+    },
+    minBedrooms: {
+      type: Number,
+    },
+    maxBedrooms: {
+      type: Number,
+    },
+    minBathrooms: {
+      type: Number,
+    },
+    maxBathrooms: {
+      type: Number,
     },
   },
   {

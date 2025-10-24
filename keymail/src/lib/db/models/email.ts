@@ -28,14 +28,12 @@ const EmailAnalyticsSchema = new Schema({
 const EmailSchema = new Schema(
   {
     userId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: true,
       index: true,
     },
     clientId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Client',
+      type: String,
       required: true,
       index: true,
     },

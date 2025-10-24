@@ -9,8 +9,7 @@ const TemplateMetadataSchema = new Schema({
 const TemplateSchema = new Schema(
   {
     userId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: true,
       index: true,
     },

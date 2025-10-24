@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { listings } from "@/lib/db/schema";
-import { eq, and, desc, like, gte, lte } from "drizzle-orm";
+import { 
+  getListingsByUserId, 
+  saveListing, 
+  getListingById, 
+  getListingByMlsId 
+} from "@/lib/db/queries-mongodb";
+import { Listing } from "@/lib/db/models";
 
 // GET /api/listings - Get all listings for a user
 export async function GET(request: NextRequest) {
@@ -21,40 +25,32 @@ export async function GET(request: NextRequest) {
     const maxPrice = searchParams.get("maxPrice");
     const neighborhood = searchParams.get("neighborhood");
 
-    let query = db
-      .select()
-      .from(listings)
-      .where(eq(listings.userId, session.user.id));
+    // Build MongoDB query
+    const query: any = { userId: session.user.id };
 
     if (search) {
-      query = query.where(
-        like(listings.address, `%${search}%`)
-      );
+      query.address = { $regex: search, $options: 'i' };
     }
 
     if (status) {
-      query = query.where(eq(listings.status, status));
+      query.status = status;
     }
 
     if (propertyType) {
-      query = query.where(eq(listings.propertyType, propertyType));
+      query.propertyType = propertyType;
     }
 
-    if (minPrice) {
-      query = query.where(gte(listings.price, parseInt(minPrice)));
-    }
-
-    if (maxPrice) {
-      query = query.where(lte(listings.price, parseInt(maxPrice)));
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = parseInt(minPrice);
+      if (maxPrice) query.price.$lte = parseInt(maxPrice);
     }
 
     if (neighborhood) {
-      query = query.where(eq(listings.neighborhood, neighborhood));
+      query.neighborhood = neighborhood;
     }
 
-    query = query.orderBy(desc(listings.createdAt));
-
-    const listingsResult = await query;
+    const listingsResult = await Listing.find(query).sort({ createdAt: -1 });
 
     return NextResponse.json({
       success: true,
@@ -104,16 +100,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if MLS ID already exists for this user
-    const existingListing = await db
-      .select()
-      .from(listings)
-      .where(and(
-        eq(listings.mlsId, mlsId),
-        eq(listings.userId, session.user.id)
-      ))
-      .limit(1);
+    const existingListing = await getListingByMlsId(mlsId);
 
-    if (existingListing.length > 0) {
+    if (existingListing && existingListing.userId === session.user.id) {
       return NextResponse.json(
         { error: "A listing with this MLS ID already exists" },
         { status: 409 }
@@ -132,23 +121,20 @@ export async function POST(request: NextRequest) {
       description,
       photos: photos || [],
       features: features || [],
-      bedrooms: bedrooms ? parseInt(bedrooms) : null,
-      bathrooms: bathrooms ? parseFloat(bathrooms) : null,
-      squareFeet: squareFeet ? parseInt(squareFeet) : null,
-      lotSize: lotSize ? parseFloat(lotSize) : null,
+      bedrooms: bedrooms ? parseInt(bedrooms) : undefined,
+      bathrooms: bathrooms ? parseFloat(bathrooms) : undefined,
+      squareFeet: squareFeet ? parseInt(squareFeet) : undefined,
+      lotSize: lotSize ? parseFloat(lotSize) : undefined,
       propertyType,
       neighborhood,
       status,
     };
 
-    const result = await db
-      .insert(listings)
-      .values(listingData)
-      .returning();
+    const result = await saveListing(listingData);
 
     return NextResponse.json({
       success: true,
-      data: result[0],
+      data: result,
     });
   } catch (error) {
     console.error("Error creating listing:", error);
@@ -195,16 +181,9 @@ export async function PUT(request: NextRequest) {
     }
 
     // Get existing listing
-    const existingListing = await db
-      .select()
-      .from(listings)
-      .where(and(
-        eq(listings.id, listingId),
-        eq(listings.userId, session.user.id)
-      ))
-      .limit(1);
+    const existingListing = await getListingById(listingId);
 
-    if (existingListing.length === 0) {
+    if (!existingListing || existingListing.userId !== session.user.id) {
       return NextResponse.json(
         { error: "Listing not found" },
         { status: 404 }
@@ -212,18 +191,10 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if MLS ID already exists for another listing by this user
-    if (mlsId && mlsId !== existingListing[0].mlsId) {
-      const duplicateListing = await db
-        .select()
-        .from(listings)
-        .where(and(
-          eq(listings.mlsId, mlsId),
-          eq(listings.userId, session.user.id),
-          eq(listings.id, listingId)
-        ))
-        .limit(1);
+    if (mlsId && mlsId !== existingListing.mlsId) {
+      const duplicateListing = await getListingByMlsId(mlsId);
 
-      if (duplicateListing.length > 0) {
+      if (duplicateListing && duplicateListing.userId === session.user.id && duplicateListing._id.toString() !== listingId) {
         return NextResponse.json(
           { error: "A listing with this MLS ID already exists" },
           { status: 409 }
@@ -250,15 +221,15 @@ export async function PUT(request: NextRequest) {
     if (neighborhood !== undefined) updateData.neighborhood = neighborhood;
     if (status !== undefined) updateData.status = status;
 
-    const result = await db
-      .update(listings)
-      .set(updateData)
-      .where(eq(listings.id, listingId))
-      .returning();
+    const result = await Listing.findByIdAndUpdate(
+      listingId,
+      { $set: updateData },
+      { new: true }
+    );
 
     return NextResponse.json({
       success: true,
-      data: result[0],
+      data: result,
     });
   } catch (error) {
     console.error("Error updating listing:", error);
@@ -288,16 +259,9 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify listing belongs to user
-    const existingListing = await db
-      .select()
-      .from(listings)
-      .where(and(
-        eq(listings.id, listingId),
-        eq(listings.userId, session.user.id)
-      ))
-      .limit(1);
+    const existingListing = await getListingById(listingId);
 
-    if (existingListing.length === 0) {
+    if (!existingListing || existingListing.userId !== session.user.id) {
       return NextResponse.json(
         { error: "Listing not found" },
         { status: 404 }
@@ -305,9 +269,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete listing
-    await db
-      .delete(listings)
-      .where(eq(listings.id, listingId));
+    await Listing.findByIdAndDelete(listingId);
 
     return NextResponse.json({
       success: true,
@@ -321,4 +283,3 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
-

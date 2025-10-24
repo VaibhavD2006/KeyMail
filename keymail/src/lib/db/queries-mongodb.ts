@@ -1,5 +1,5 @@
 import dbConnect from './mongodb';
-import { User, Client, Email, Template, Milestone, Listing, PropertyMatch } from './models';
+import { User, Client, Email, Template, Milestone, Listing, PropertyMatch, Showing } from './models';
 
 // User queries - Using MongoDB
 export async function getUserById(id: string) {
@@ -701,3 +701,72 @@ export async function deletePropertyMatch(id: string) {
   }
 }
 
+// Showing queries - Using MongoDB
+export async function saveShowing(showingData: any) {
+  try {
+    await dbConnect();
+    const showing = await Showing.create(showingData);
+    return showing;
+  } catch (error) {
+    console.error("Error saving showing:", error);
+    throw error;
+  }
+}
+
+export async function getShowingsByUserId(userId: string, filters?: any) {
+  try {
+    await dbConnect();
+    
+    const query: any = { userId };
+    if (filters?.clientId) query.clientId = filters.clientId;
+    if (filters?.listingId) query.listingId = filters.listingId;
+    if (filters?.status) query.status = filters.status;
+    if (filters?.dateFrom) query.scheduledAt = { ...query.scheduledAt, $gte: new Date(filters.dateFrom) };
+    if (filters?.dateTo) query.scheduledAt = { ...query.scheduledAt, $lte: new Date(filters.dateTo) };
+    
+    const showings = await Showing.find(query)
+      .sort({ scheduledAt: -1 })
+      .exec();
+    return showings;
+  } catch (error) {
+    console.error("Error getting showings by user ID:", error);
+    throw error;
+  }
+}
+
+export async function getShowingById(id: string) {
+  try {
+    await dbConnect();
+    const showing = await Showing.findById(id);
+    return showing;
+  } catch (error) {
+    console.error("Error getting showing by ID:", error);
+    throw error;
+  }
+}
+
+export async function updateShowing(id: string, updateData: any) {
+  try {
+    await dbConnect();
+    const showing = await Showing.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true }
+    );
+    return showing;
+  } catch (error) {
+    console.error("Error updating showing:", error);
+    throw error;
+  }
+}
+
+export async function deleteShowing(id: string) {
+  try {
+    await dbConnect();
+    const showing = await Showing.findByIdAndDelete(id);
+    return showing;
+  } catch (error) {
+    console.error("Error deleting showing:", error);
+    throw error;
+  }
+}
