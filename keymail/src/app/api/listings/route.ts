@@ -8,6 +8,7 @@ import {
   getListingByMlsId 
 } from "@/lib/db/queries-mongodb";
 import { Listing } from "@/lib/db/models";
+import dbConnect from "@/lib/db/mongodb";
 
 // GET /api/listings - Get all listings for a user
 export async function GET(request: NextRequest) {
@@ -50,6 +51,7 @@ export async function GET(request: NextRequest) {
       query.neighborhood = neighborhood;
     }
 
+    await dbConnect();
     const listingsResult = await Listing.find(query).sort({ createdAt: -1 });
 
     return NextResponse.json({
