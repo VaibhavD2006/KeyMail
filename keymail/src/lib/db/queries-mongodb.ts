@@ -13,10 +13,17 @@ export async function getUserById(id: string) {
   }
 }
 
-export async function getUserByEmail(email: string) {
+export async function getUserByEmail(
+  email: string,
+  options: { includePasswordHash?: boolean } = {}
+) {
   try {
     await dbConnect();
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const query = User.findOne({ email: email.toLowerCase() });
+    if (options.includePasswordHash) {
+      query.select("+passwordHash");
+    }
+    const user = await query;
     return user;
   } catch (error) {
     console.error("Error getting user by email:", error);
@@ -26,7 +33,7 @@ export async function getUserByEmail(email: string) {
 
 export async function createUser(userData: any) {
   try {
-    console.log("Creating user with data:", userData);
+    console.log("Creating user with email:", userData.email);
     await dbConnect();
     
     // Check if user already exists
@@ -37,14 +44,24 @@ export async function createUser(userData: any) {
     }
     
     // Create new user
-    const user = await User.create({
+    const createData: Record<string, unknown> = {
       email: userData.email,
       name: userData.name || "User",
       plan: userData.plan || "free",
       settings: userData.settings || {}
-    });
+    };
+
+    if (userData.companyName) {
+      createData.companyName = userData.companyName;
+    }
+
+    if (userData.passwordHash) {
+      createData.passwordHash = userData.passwordHash;
+    }
+
+    const user = await User.create(createData);
     
-    console.log("User created successfully:", user);
+    console.log("User created successfully:", user._id);
     return user;
   } catch (error) {
     console.error("Error creating user:", error);
