@@ -44,7 +44,7 @@ export async function createUser(userData: any) {
     }
     
     // Create new user
-    const createData: Record<string, any> = {
+    const createData: Record<string, unknown> = {
       email: userData.email,
       name: userData.name || "User",
       plan: userData.plan || "free",
