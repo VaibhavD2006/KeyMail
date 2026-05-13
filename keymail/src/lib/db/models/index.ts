@@ -6,4 +6,5 @@ export { default as Analytics } from './analytics';
 export { default as Milestone } from './milestone';
 export { default as Listing } from './listing';
 export { default as PropertyMatch } from './propertyMatch';
-export { default as Showing } from './showing'; 
+export { default as Showing } from './showing';
+export { default as ShowingFeedback } from './showingFeedback'; 

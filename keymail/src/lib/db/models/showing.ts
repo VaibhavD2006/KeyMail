@@ -1,4 +1,4 @@
-import mongoose, { Schema, models, model } from 'mongoose';
+import { Schema, models, model } from 'mongoose';
 
 const ShowingSchema = new Schema(
   {
@@ -37,6 +37,9 @@ const ShowingSchema = new Schema(
     followUpSent: {
       type: Boolean,
       default: false,
+    },
+    followUpSentAt: {
+      type: Date,
     },
   },
   {
