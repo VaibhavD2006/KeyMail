@@ -9,7 +9,7 @@ import {
   getClientById,
   getListingById
 } from "@/lib/db/queries-mongodb";
-import { generateEmailContent } from "@/lib/ai/openai";
+import { serializeMongoDocument } from "@/lib/db/serialize";
 
 // GET /api/showings - Get all showings for a user
 export async function GET(request: NextRequest) {
@@ -44,9 +44,9 @@ export async function GET(request: NextRequest) {
         ]);
 
         return {
-          ...showing.toObject(),
-          client: client ? client.toObject() : null,
-          listing: listing ? listing.toObject() : null,
+          ...serializeMongoDocument(showing),
+          client: client ? serializeMongoDocument(client) : null,
+          listing: listing ? serializeMongoDocument(listing) : null,
         };
       })
     );
@@ -122,9 +122,9 @@ export async function POST(request: NextRequest) {
 
     // Enrich with client and listing details
     const enrichedShowing = {
-      ...result.toObject(),
-      client: client.toObject(),
-      listing: listing.toObject(),
+      ...serializeMongoDocument(result),
+      client: serializeMongoDocument(client),
+      listing: serializeMongoDocument(listing),
     };
 
     return NextResponse.json({
@@ -184,7 +184,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: result,
+      data: serializeMongoDocument(result),
     });
   } catch (error) {
     console.error("Error updating showing:", error);

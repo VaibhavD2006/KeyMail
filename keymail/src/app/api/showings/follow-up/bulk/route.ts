@@ -1,10 +1,141 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { showings, clients, listings, emailHistory, showingFeedback } from "@/lib/db/schema";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import dbConnect from "@/lib/db/mongodb";
+import { Client, Email, Listing, Showing, ShowingFeedback } from "@/lib/db/models";
+import { serializeMongoDocument } from "@/lib/db/serialize";
 import { generateEmailContent } from "@/lib/ai/openai";
+
+function buildFollowUpContext({
+  listing,
+  showing,
+  customMessage,
+  emailTemplate,
+  includeFeedbackRequest,
+}: {
+  listing: any;
+  showing: any;
+  customMessage?: string;
+  emailTemplate?: string;
+  includeFeedbackRequest: boolean;
+}) {
+  const propertyDetails = [
+    listing.mlsId ? `MLS ID: ${listing.mlsId}` : null,
+    listing.address ? `Address: ${listing.address}` : null,
+    [listing.city, listing.state, listing.zipCode].filter(Boolean).join(", ") || null,
+    listing.price ? `Price: ${listing.price}` : null,
+    listing.bedrooms ? `Bedrooms: ${listing.bedrooms}` : null,
+    listing.bathrooms ? `Bathrooms: ${listing.bathrooms}` : null,
+    listing.squareFeet ? `Square feet: ${listing.squareFeet}` : null,
+    listing.propertyType ? `Property type: ${listing.propertyType}` : null,
+    listing.neighborhood ? `Neighborhood: ${listing.neighborhood}` : null,
+    Array.isArray(listing.features) && listing.features.length > 0
+      ? `Features: ${listing.features.join(", ")}`
+      : null,
+    listing.description ? `Description: ${listing.description}` : null,
+  ].filter(Boolean);
+
+  return [
+    "Write a follow-up email after a real estate showing.",
+    propertyDetails.length > 0 ? `Property details:\n${propertyDetails.join("\n")}` : null,
+    showing.scheduledAt ? `Showing scheduled at: ${new Date(showing.scheduledAt).toISOString()}` : null,
+    showing.completedAt ? `Showing completed at: ${new Date(showing.completedAt).toISOString()}` : null,
+    showing.agentNotes ? `Agent notes: ${showing.agentNotes}` : null,
+    customMessage ? `Custom agent message to incorporate: ${customMessage}` : null,
+    emailTemplate ? `Template guidance: ${emailTemplate}` : null,
+    includeFeedbackRequest ? "Ask the client for brief feedback about the property." : null,
+  ].filter(Boolean).join("\n\n");
+}
+
+async function loadOwnedShowing(showingId: string, userId: string) {
+  const showing = await Showing.findOne({ _id: showingId, userId });
+  if (!showing) {
+    return null;
+  }
+
+  const [client, listing] = await Promise.all([
+    Client.findOne({ _id: showing.clientId, userId }),
+    Listing.findOne({ _id: showing.listingId, userId }),
+  ]);
+
+  return { showing, client, listing };
+}
+
+async function createFollowUpEmail({
+  showing,
+  client,
+  listing,
+  userId,
+  emailTemplate,
+  customMessage,
+  tone,
+  includeFeedbackRequest,
+}: {
+  showing: any;
+  client: any;
+  listing: any;
+  userId: string;
+  emailTemplate?: string;
+  customMessage?: string;
+  tone: string;
+  includeFeedbackRequest: boolean;
+}) {
+  const serializedClient = serializeMongoDocument(client);
+  const serializedListing = serializeMongoDocument(listing);
+  const serializedShowing = serializeMongoDocument(showing);
+
+  const emailContent = await generateEmailContent({
+    client: serializedClient,
+    occasion: "showing_follow_up",
+    tone,
+    style: "professional",
+    additionalContext: buildFollowUpContext({
+      listing: serializedListing,
+      showing: serializedShowing,
+      customMessage,
+      emailTemplate,
+      includeFeedbackRequest,
+    }),
+  });
+
+  const email = await Email.create({
+    userId,
+    clientId: serializedShowing.clientId,
+    occasion: "showing_follow_up",
+    subject: emailContent.subject,
+    generatedContent: emailContent.content,
+    editedContent: emailContent.content,
+    status: "sent",
+    sentDate: new Date(),
+    metadata: {
+      aiParameters: {
+        tone,
+        style: "professional",
+        length: "medium",
+      },
+    },
+  });
+
+  showing.followUpSent = true;
+  showing.followUpSentAt = new Date();
+  await showing.save();
+
+  if (includeFeedbackRequest) {
+    await ShowingFeedback.create({
+      showingId: serializedShowing.id,
+      clientId: serializedShowing.clientId,
+      followUpNeeded: false,
+    });
+  }
+
+  return {
+    email,
+    emailContent,
+    serializedShowing,
+    serializedClient,
+    serializedListing,
+  };
+}
 
 // POST /api/showings/follow-up/bulk - Send bulk follow-up emails
 export async function POST(request: NextRequest) {
@@ -32,119 +163,46 @@ export async function POST(request: NextRequest) {
     const results = [];
     const errors = [];
 
+    await dbConnect();
+
     // Process each showing
     for (const showingId of showingIds) {
       try {
-        // Get showing with client and listing details
-        const showingResult = await db
-          .select()
-          .from(showings)
-          .where(and(
-            eq(showings.id, showingId),
-            eq(showings.userId, session.user.id)
-          ))
-          .limit(1);
-
-        if (showingResult.length === 0) {
+        const ownedShowing = await loadOwnedShowing(showingId, session.user.id);
+        if (!ownedShowing) {
           errors.push(`Showing ${showingId}: Not found`);
           continue;
         }
 
-        const showing = showingResult[0];
-
-        // Get client and listing details
-        const [client, listing] = await Promise.all([
-          db.select().from(clients).where(eq(clients.id, showing.clientId)).limit(1),
-          db.select().from(listings).where(eq(listings.id, showing.listingId)).limit(1),
-        ]);
-
-        if (client.length === 0 || listing.length === 0) {
+        const { showing, client, listing } = ownedShowing;
+        if (!client || !listing) {
           errors.push(`Showing ${showingId}: Client or listing not found`);
           continue;
         }
 
-        // Generate follow-up email content
-        const emailContent = await generateEmailContent({
-          clientName: client[0].name,
-          clientEmail: client[0].email,
-          occasion: "showing_follow_up",
-          propertyDetails: {
-            mlsId: listing[0].mlsId,
-            address: listing[0].address,
-            city: listing[0].city,
-            state: listing[0].state,
-            zipCode: listing[0].zipCode,
-            price: listing[0].price,
-            bedrooms: listing[0].bedrooms,
-            bathrooms: listing[0].bathrooms,
-            squareFeet: listing[0].squareFeet,
-            propertyType: listing[0].propertyType,
-            neighborhood: listing[0].neighborhood,
-            features: listing[0].features,
-            description: listing[0].description,
-          },
-          showingDetails: {
-            scheduledAt: showing.scheduledAt,
-            completedAt: showing.completedAt,
-            agentNotes: showing.agentNotes,
-            status: showing.status,
-          },
+        const {
+          email,
+          emailContent,
+          serializedShowing,
+          serializedClient,
+          serializedListing,
+        } = await createFollowUpEmail({
+          showing,
+          client,
+          listing,
+          userId: session.user.id,
+          emailTemplate,
           customMessage,
           tone,
-          emailTemplate,
           includeFeedbackRequest,
         });
 
-        // Save email to history
-        const emailResult = await db
-          .insert(emailHistory)
-          .values({
-            userId: session.user.id,
-            clientId: showing.clientId,
-            subject: emailContent.subject,
-            content: emailContent.content,
-            status: "sent",
-            metadata: {
-              milestoneType: "showing_follow_up",
-              listingId: showing.listingId,
-              showingId: showing.id,
-              tone,
-              customMessage,
-              includeFeedbackRequest,
-            },
-          })
-          .returning();
-
-        // Update showing to mark follow-up as sent
-        await db
-          .update(showings)
-          .set({
-            followUpSent: true,
-            followUpSentAt: new Date(),
-          })
-          .where(eq(showings.id, showingId));
-
-        // Create feedback request if requested
-        if (includeFeedbackRequest) {
-          await db
-            .insert(showingFeedback)
-            .values({
-              showingId: showing.id,
-              clientId: showing.clientId,
-              rating: null,
-              liked: null,
-              comments: null,
-              followUpNeeded: false,
-              nextAction: null,
-            });
-        }
-
         results.push({
-          emailId: emailResult[0].id,
+          emailId: email.id,
           subject: emailContent.subject,
-          showingId: showing.id,
-          clientName: client[0].name,
-          listingAddress: listing[0].address,
+          showingId: serializedShowing.id,
+          clientName: serializedClient.name,
+          listingAddress: serializedListing.address,
           followUpSent: true,
           feedbackRequested: includeFeedbackRequest,
         });
