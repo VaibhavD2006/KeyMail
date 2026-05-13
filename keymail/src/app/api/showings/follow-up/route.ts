@@ -6,6 +6,48 @@ import { Client, Email, Listing, Showing, ShowingFeedback } from "@/lib/db/model
 import { serializeMongoDocument } from "@/lib/db/serialize";
 import { generateEmailContent } from "@/lib/ai/openai";
 
+type SerializedClient = Record<string, unknown> & {
+  name?: string;
+  email?: string;
+};
+
+type SerializedListing = Record<string, unknown> & {
+  mlsId?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  price?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  squareFeet?: number;
+  propertyType?: string;
+  neighborhood?: string;
+  features?: string[];
+  description?: string;
+};
+
+type SerializedShowing = Record<string, unknown> & {
+  id?: string;
+  clientId?: string;
+  listingId?: string;
+  scheduledAt?: string | Date;
+  completedAt?: string | Date;
+  agentNotes?: string;
+};
+
+type ShowingDocument = SerializedShowing & {
+  clientId: string;
+  listingId: string;
+  followUpSent?: boolean;
+  followUpSentAt?: Date;
+  save: () => Promise<unknown>;
+};
+
+function formatContextDate(value?: string | Date) {
+  return value ? new Date(value).toISOString() : null;
+}
+
 function buildFollowUpContext({
   listing,
   showing,
@@ -13,8 +55,8 @@ function buildFollowUpContext({
   emailTemplate,
   includeFeedbackRequest,
 }: {
-  listing: any;
-  showing: any;
+  listing: SerializedListing;
+  showing: SerializedShowing;
   customMessage?: string;
   emailTemplate?: string;
   includeFeedbackRequest: boolean;
@@ -38,8 +80,8 @@ function buildFollowUpContext({
   return [
     "Write a follow-up email after a real estate showing.",
     propertyDetails.length > 0 ? `Property details:\n${propertyDetails.join("\n")}` : null,
-    showing.scheduledAt ? `Showing scheduled at: ${new Date(showing.scheduledAt).toISOString()}` : null,
-    showing.completedAt ? `Showing completed at: ${new Date(showing.completedAt).toISOString()}` : null,
+    showing.scheduledAt ? `Showing scheduled at: ${formatContextDate(showing.scheduledAt)}` : null,
+    showing.completedAt ? `Showing completed at: ${formatContextDate(showing.completedAt)}` : null,
     showing.agentNotes ? `Agent notes: ${showing.agentNotes}` : null,
     customMessage ? `Custom agent message to incorporate: ${customMessage}` : null,
     emailTemplate ? `Template guidance: ${emailTemplate}` : null,
@@ -50,7 +92,7 @@ function buildFollowUpContext({
 async function loadOwnedShowing(showingId: string, userId: string) {
   await dbConnect();
 
-  const showing = await Showing.findOne({ _id: showingId, userId });
+  const showing = await Showing.findOne({ _id: showingId, userId }) as ShowingDocument | null;
   if (!showing) {
     return null;
   }
@@ -77,21 +119,29 @@ async function createFollowUpEmail({
   tone,
   includeFeedbackRequest,
 }: {
-  showing: any;
-  client: any;
-  listing: any;
+  showing: ShowingDocument;
+  client: unknown;
+  listing: unknown;
   userId: string;
   emailTemplate?: string;
   customMessage?: string;
   tone: string;
   includeFeedbackRequest: boolean;
 }) {
-  const serializedClient = serializeMongoDocument(client);
-  const serializedListing = serializeMongoDocument(listing);
-  const serializedShowing = serializeMongoDocument(showing);
+  const serializedClient = serializeMongoDocument<SerializedClient>(client);
+  const serializedListing = serializeMongoDocument<SerializedListing>(listing);
+  const serializedShowing = serializeMongoDocument<SerializedShowing>(showing);
+
+  if (!serializedClient || !serializedListing || !serializedShowing) {
+    throw new Error("Cannot create follow-up email without showing, client, and listing records");
+  }
 
   const emailContent = await generateEmailContent({
-    client: serializedClient,
+    client: {
+      ...serializedClient,
+      name: serializedClient.name || "Client",
+      email: serializedClient.email || "",
+    },
     occasion: "showing_follow_up",
     tone,
     style: "professional",
@@ -120,7 +170,7 @@ async function createFollowUpEmail({
         length: "medium",
       },
     },
-  });
+  }) as { id?: string };
 
   showing.followUpSent = true;
   showing.followUpSentAt = new Date();
@@ -169,7 +219,7 @@ export async function GET(request: NextRequest) {
 
     // Enrich with client and listing details
     const enrichedShowings = await Promise.all(
-      showingsNeedingFollowUp.map(async (showing: any) => {
+      showingsNeedingFollowUp.map(async (showing: ShowingDocument) => {
         const [client, listing] = await Promise.all([
           Client.findOne({ _id: showing.clientId, userId: session.user.id }),
           Listing.findOne({ _id: showing.listingId, userId: session.user.id }),
