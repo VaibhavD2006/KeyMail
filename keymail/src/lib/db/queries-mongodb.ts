@@ -114,7 +114,7 @@ export async function updateClient(
   try {
     await dbConnect();
     const userId = updateData === undefined ? undefined : (userIdOrUpdateData as string);
-    const data = updateData === undefined ? userIdOrUpdateData : updateData;
+    const data = (updateData === undefined ? userIdOrUpdateData : updateData) as Record<string, any>;
     const query = userId ? { _id: id, userId } : { _id: id };
 
     const client = await Client.findOneAndUpdate(
