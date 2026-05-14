@@ -93,10 +93,12 @@ export async function getClientsByUserId(userId: string) {
   }
 }
 
-export async function getClientById(id: string) {
+export async function getClientById(id: string, userId?: string) {
   try {
     await dbConnect();
-    const client = await Client.findById(id);
+    const client = userId
+      ? await Client.findOne({ _id: id, userId })
+      : await Client.findById(id);
     return client;
   } catch (error) {
     console.error("Error getting client by ID:", error);
@@ -104,12 +106,20 @@ export async function getClientById(id: string) {
   }
 }
 
-export async function updateClient(id: string, updateData: any) {
+export async function updateClient(
+  id: string,
+  userIdOrUpdateData: string | Record<string, any>,
+  updateData?: Record<string, any>
+) {
   try {
     await dbConnect();
-    const client = await Client.findByIdAndUpdate(
-      id,
-      { $set: updateData },
+    const userId = updateData === undefined ? undefined : (userIdOrUpdateData as string);
+    const data = updateData === undefined ? userIdOrUpdateData : updateData;
+    const query = userId ? { _id: id, userId } : { _id: id };
+
+    const client = await Client.findOneAndUpdate(
+      query,
+      { $set: data },
       { new: true }
     );
     return client;
@@ -119,10 +129,11 @@ export async function updateClient(id: string, updateData: any) {
   }
 }
 
-export async function deleteClient(id: string) {
+export async function deleteClient(id: string, userId?: string) {
   try {
     await dbConnect();
-    const client = await Client.findByIdAndDelete(id);
+    const query = userId ? { _id: id, userId } : { _id: id };
+    const client = await Client.findOneAndDelete(query);
     return client;
   } catch (error) {
     console.error("Error deleting client:", error);
