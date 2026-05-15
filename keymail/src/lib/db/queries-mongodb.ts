@@ -24,9 +24,24 @@ export async function getUserByEmail(email: string) {
   }
 }
 
+export async function getUserWithPasswordByEmail(email: string) {
+  try {
+    await dbConnect();
+    const user = await User.findOne({ email: email.toLowerCase() }).select("+passwordHash");
+    return user;
+  } catch (error) {
+    console.error("Error getting user with password by email:", error);
+    throw error;
+  }
+}
+
 export async function createUser(userData: any) {
   try {
-    console.log("Creating user with data:", userData);
+    const { passwordHash, ...safeUserData } = userData;
+    console.log("Creating user with data:", {
+      ...safeUserData,
+      hasPasswordHash: Boolean(passwordHash),
+    });
     await dbConnect();
     
     // Check if user already exists
@@ -93,10 +108,11 @@ export async function getClientsByUserId(userId: string) {
   }
 }
 
-export async function getClientById(id: string) {
+export async function getClientById(id: string, userId?: string) {
   try {
     await dbConnect();
-    const client = await Client.findById(id);
+    const query = userId ? { _id: id, userId } : { _id: id };
+    const client = await Client.findOne(query);
     return client;
   } catch (error) {
     console.error("Error getting client by ID:", error);
@@ -104,11 +120,20 @@ export async function getClientById(id: string) {
   }
 }
 
-export async function updateClient(id: string, updateData: any) {
+export async function updateClient(id: string, updateData: Record<string, unknown>): Promise<unknown>;
+export async function updateClient(id: string, userId: string, updateData: Record<string, unknown>): Promise<unknown>;
+export async function updateClient(
+  id: string,
+  userIdOrUpdateData: string | Record<string, unknown>,
+  maybeUpdateData?: Record<string, unknown>
+) {
   try {
     await dbConnect();
-    const client = await Client.findByIdAndUpdate(
-      id,
+    const hasUserScope = typeof userIdOrUpdateData === "string" && maybeUpdateData !== undefined;
+    const query = hasUserScope ? { _id: id, userId: userIdOrUpdateData } : { _id: id };
+    const updateData = hasUserScope ? maybeUpdateData : userIdOrUpdateData;
+    const client = await Client.findOneAndUpdate(
+      query,
       { $set: updateData },
       { new: true }
     );
@@ -119,10 +144,11 @@ export async function updateClient(id: string, updateData: any) {
   }
 }
 
-export async function deleteClient(id: string) {
+export async function deleteClient(id: string, userId?: string) {
   try {
     await dbConnect();
-    const client = await Client.findByIdAndDelete(id);
+    const query = userId ? { _id: id, userId } : { _id: id };
+    const client = await Client.findOneAndDelete(query);
     return client;
   } catch (error) {
     console.error("Error deleting client:", error);
