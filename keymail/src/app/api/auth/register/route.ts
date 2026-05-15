@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { hash } from "bcryptjs";
 import { getUserByEmail, createUser } from "@/lib/db/queries-mongodb";
 import { ApiResponse } from "@/types";
 
@@ -24,15 +25,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // In a real application, you would hash the password here
-    // const hashedPassword = await bcrypt.hash(password, 10);
+    const passwordHash = await hash(password, 12);
 
     // Create new user
     const newUser = await createUser({
       name,
       email,
-      // password: hashedPassword,
-      password, // For demo purposes only, in a real app you would use the hashed password
+      passwordHash,
       companyName: companyName || "",
       plan: "free",
       settings: {

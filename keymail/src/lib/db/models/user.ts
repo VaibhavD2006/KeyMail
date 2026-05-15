@@ -53,6 +53,10 @@ const UserSchema = new Schema(
       type: String,
       trim: true,
     },
+    passwordHash: {
+      type: String,
+      select: false,
+    },
     plan: {
       type: String,
       enum: ['free', 'premium', 'enterprise'],

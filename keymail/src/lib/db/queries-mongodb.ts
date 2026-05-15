@@ -24,9 +24,24 @@ export async function getUserByEmail(email: string) {
   }
 }
 
+export async function getUserWithPasswordByEmail(email: string) {
+  try {
+    await dbConnect();
+    const user = await User.findOne({ email: email.toLowerCase() }).select("+passwordHash");
+    return user;
+  } catch (error) {
+    console.error("Error getting user with password by email:", error);
+    throw error;
+  }
+}
+
 export async function createUser(userData: any) {
   try {
-    console.log("Creating user with data:", userData);
+    const { passwordHash, ...safeUserData } = userData;
+    console.log("Creating user with data:", {
+      ...safeUserData,
+      hasPasswordHash: Boolean(passwordHash),
+    });
     await dbConnect();
     
     // Check if user already exists
