@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { 
-  getListingsByUserId, 
   saveListing, 
   getListingById, 
   getListingByMlsId 
 } from "@/lib/db/queries-mongodb";
 import { Listing } from "@/lib/db/models";
+import dbConnect from "@/lib/db/mongodb";
 
 // GET /api/listings - Get all listings for a user
 export async function GET(request: NextRequest) {
@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
       query.neighborhood = neighborhood;
     }
 
+    await dbConnect();
     const listingsResult = await Listing.find(query).sort({ createdAt: -1 });
 
     return NextResponse.json({
@@ -221,6 +222,7 @@ export async function PUT(request: NextRequest) {
     if (neighborhood !== undefined) updateData.neighborhood = neighborhood;
     if (status !== undefined) updateData.status = status;
 
+    await dbConnect();
     const result = await Listing.findByIdAndUpdate(
       listingId,
       { $set: updateData },
@@ -269,6 +271,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete listing
+    await dbConnect();
     await Listing.findByIdAndDelete(listingId);
 
     return NextResponse.json({
