@@ -99,10 +99,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if MLS ID already exists for this user
+    // MLS IDs are globally unique in MongoDB, so fail before hitting the index.
     const existingListing = await getListingByMlsId(mlsId);
 
-    if (existingListing && existingListing.userId === session.user.id) {
+    if (existingListing) {
       return NextResponse.json(
         { error: "A listing with this MLS ID already exists" },
         { status: 409 }
@@ -190,11 +190,11 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Check if MLS ID already exists for another listing by this user
+    // MLS IDs are globally unique in MongoDB, so any other listing is a conflict.
     if (mlsId && mlsId !== existingListing.mlsId) {
       const duplicateListing = await getListingByMlsId(mlsId);
 
-      if (duplicateListing && duplicateListing.userId === session.user.id && duplicateListing._id.toString() !== listingId) {
+      if (duplicateListing && duplicateListing._id.toString() !== listingId) {
         return NextResponse.json(
           { error: "A listing with this MLS ID already exists" },
           { status: 409 }

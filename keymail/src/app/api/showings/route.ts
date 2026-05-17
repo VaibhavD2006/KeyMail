@@ -148,13 +148,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const body = await request.json();
     const { 
       showingId, 
       status, 
       agentNotes, 
       completedAt,
-      followUpSent = false 
-    } = await request.json();
+      followUpSent
+    } = body;
 
     if (!showingId) {
       return NextResponse.json(
@@ -178,7 +179,9 @@ export async function PUT(request: NextRequest) {
     if (status) updateData.status = status;
     if (agentNotes !== undefined) updateData.agentNotes = agentNotes;
     if (completedAt) updateData.completedAt = new Date(completedAt);
-    if (followUpSent !== undefined) updateData.followUpSent = followUpSent;
+    if (Object.prototype.hasOwnProperty.call(body, "followUpSent")) {
+      updateData.followUpSent = followUpSent;
+    }
 
     const result = await updateShowing(showingId, updateData);
 
