@@ -734,6 +734,28 @@ export async function getShowingsByUserId(userId: string, filters?: any) {
   }
 }
 
+export async function getShowingsNeedingFollowUp(userId: string, daysAgo = 1) {
+  try {
+    await dbConnect();
+
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
+
+    const showings = await Showing.find({
+      userId,
+      status: "completed",
+      followUpSent: false,
+      completedAt: { $gte: cutoffDate },
+    })
+      .sort({ completedAt: -1 })
+      .exec();
+    return showings;
+  } catch (error) {
+    console.error("Error getting showings needing follow-up:", error);
+    throw error;
+  }
+}
+
 export async function getShowingById(id: string) {
   try {
     await dbConnect();
@@ -756,6 +778,21 @@ export async function updateShowing(id: string, updateData: any) {
     return showing;
   } catch (error) {
     console.error("Error updating showing:", error);
+    throw error;
+  }
+}
+
+export async function markShowingFollowUpSent(id: string, userId: string) {
+  try {
+    await dbConnect();
+    const showing = await Showing.findOneAndUpdate(
+      { _id: id, userId },
+      { $set: { followUpSent: true, followUpSentAt: new Date() } },
+      { new: true }
+    );
+    return showing;
+  } catch (error) {
+    console.error("Error marking showing follow-up sent:", error);
     throw error;
   }
 }
