@@ -560,7 +560,19 @@ export async function getMilestonesByClientId(clientId: string) {
 export async function saveEmailHistory(emailData: any) {
   try {
     await dbConnect();
-    const email = await Email.create(emailData);
+    const email = await Email.create({
+      ...emailData,
+      occasion:
+        emailData.occasion ||
+        emailData.metadata?.milestoneType ||
+        emailData.metadata?.occasion ||
+        "email_history",
+      generatedContent: emailData.generatedContent || emailData.content,
+      editedContent: emailData.editedContent || emailData.content,
+      sentDate:
+        emailData.sentDate ||
+        (emailData.status === "sent" ? new Date() : undefined),
+    });
     return email;
   } catch (error) {
     console.error("Error saving email history:", error);
@@ -569,6 +581,10 @@ export async function saveEmailHistory(emailData: any) {
 }
 
 // Listing queries
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export async function saveListing(listingData: any) {
   try {
     console.log("Saving listing with data:", listingData);
@@ -583,10 +599,24 @@ export async function saveListing(listingData: any) {
   }
 }
 
-export async function getListingsByUserId(userId: string) {
+export async function getListingsByUserId(userId: string, filters?: any) {
   try {
     await dbConnect();
-    const listings = await Listing.find({ userId })
+    const query: any = { userId };
+
+    if (filters?.search) {
+      query.address = { $regex: escapeRegex(filters.search), $options: "i" };
+    }
+    if (filters?.status) query.status = filters.status;
+    if (filters?.propertyType) query.propertyType = filters.propertyType;
+    if (filters?.neighborhood) query.neighborhood = filters.neighborhood;
+    if (filters?.minPrice || filters?.maxPrice) {
+      query.price = {};
+      if (filters.minPrice) query.price.$gte = Number(filters.minPrice);
+      if (filters.maxPrice) query.price.$lte = Number(filters.maxPrice);
+    }
+
+    const listings = await Listing.find(query)
       .sort({ createdAt: -1 })
       .exec();
     return listings;
@@ -730,6 +760,28 @@ export async function getShowingsByUserId(userId: string, filters?: any) {
     return showings;
   } catch (error) {
     console.error("Error getting showings by user ID:", error);
+    throw error;
+  }
+}
+
+export async function getShowingsNeedingFollowUp(userId: string, daysAgo: number) {
+  try {
+    await dbConnect();
+
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
+
+    const showings = await Showing.find({
+      userId,
+      status: "completed",
+      followUpSent: false,
+      completedAt: { $gte: cutoffDate },
+    })
+      .sort({ completedAt: -1 })
+      .exec();
+    return showings;
+  } catch (error) {
+    console.error("Error getting showings needing follow-up:", error);
     throw error;
   }
 }

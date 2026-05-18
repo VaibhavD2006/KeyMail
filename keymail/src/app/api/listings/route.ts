@@ -25,32 +25,14 @@ export async function GET(request: NextRequest) {
     const maxPrice = searchParams.get("maxPrice");
     const neighborhood = searchParams.get("neighborhood");
 
-    // Build MongoDB query
-    const query: any = { userId: session.user.id };
-
-    if (search) {
-      query.address = { $regex: search, $options: 'i' };
-    }
-
-    if (status) {
-      query.status = status;
-    }
-
-    if (propertyType) {
-      query.propertyType = propertyType;
-    }
-
-    if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = parseInt(minPrice);
-      if (maxPrice) query.price.$lte = parseInt(maxPrice);
-    }
-
-    if (neighborhood) {
-      query.neighborhood = neighborhood;
-    }
-
-    const listingsResult = await Listing.find(query).sort({ createdAt: -1 });
+    const listingsResult = await getListingsByUserId(session.user.id, {
+      search,
+      status,
+      propertyType,
+      minPrice,
+      maxPrice,
+      neighborhood,
+    });
 
     return NextResponse.json({
       success: true,
