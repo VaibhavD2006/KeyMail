@@ -10,6 +10,20 @@ const EmailMetadataSchema = new Schema({
     style: String,
     length: String,
   },
+  milestoneType: String,
+  occasion: String,
+  listingId: String,
+  showingId: String,
+  matchScore: Number,
+  matchReasons: [String],
+  tone: String,
+  customMessage: String,
+  emailTemplate: String,
+  includeFeedbackRequest: Boolean,
+  mlsData: Schema.Types.Mixed,
+}, {
+  _id: false,
+  strict: false,
 });
 
 const EmailAnalyticsSchema = new Schema({
@@ -76,6 +90,8 @@ const EmailSchema = new Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 

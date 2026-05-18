@@ -89,29 +89,38 @@ export async function POST(request: NextRequest) {
 
           // Generate personalized email content
           const emailContent = await generateEmailContent({
-            clientName: client.name,
-            clientEmail: client.email,
-            occasion: "property_match",
-            propertyDetails: {
-              mlsId: listing.mlsId,
-              address: listing.address,
-              city: listing.city,
-              state: listing.state,
-              zipCode: listing.zipCode,
-              price: listing.price,
-              bedrooms: listing.bedrooms,
-              bathrooms: listing.bathrooms,
-              squareFeet: listing.squareFeet,
-              propertyType: listing.propertyType,
-              neighborhood: listing.neighborhood,
-              features: listing.features,
-              description: listing.description,
+            client: {
+              id: client._id.toString(),
+              name: client.name,
+              email: client.email,
+              relationshipLevel: client.relationshipLevel,
+              yearsKnown: client.yearsKnown,
+              tags: client.tags,
             },
-            matchScore: existingMatch.matchScore,
-            matchReasons: existingMatch.reasons,
-            customMessage,
+            occasion: "property_match",
             tone,
-            emailTemplate,
+            style: "real_estate",
+            length: "medium",
+            additionalContext: [
+              "Write a personalized email recommending a matched property.",
+              `Property: MLS #${listing.mlsId || "N/A"} - ${listing.address}, ${listing.city}, ${listing.state} ${listing.zipCode}`,
+              listing.price ? `Price: $${Number(listing.price).toLocaleString()}` : null,
+              `Property details: ${[
+                listing.bedrooms ? `${listing.bedrooms} bedrooms` : null,
+                listing.bathrooms ? `${listing.bathrooms} bathrooms` : null,
+                listing.squareFeet ? `${Number(listing.squareFeet).toLocaleString()} sq ft` : null,
+                listing.propertyType ? String(listing.propertyType).replace("_", " ") : null,
+                listing.neighborhood ? `in ${listing.neighborhood}` : null,
+              ].filter(Boolean).join(", ") || "No additional property details provided"}`,
+              listing.features?.length ? `Features: ${listing.features.join(", ")}` : null,
+              listing.description ? `Description: ${listing.description}` : null,
+              `Match score: ${existingMatch.matchScore}`,
+              existingMatch.reasons?.length ? `Match reasons: ${existingMatch.reasons.join(", ")}` : null,
+              customMessage ? `Agent custom message: ${customMessage}` : null,
+              emailTemplate ? `Requested template or theme: ${emailTemplate}` : null,
+            ]
+              .filter(Boolean)
+              .join("\n"),
           });
 
           // Save email to history

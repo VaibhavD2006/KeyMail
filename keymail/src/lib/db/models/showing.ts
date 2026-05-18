@@ -38,9 +38,14 @@ const ShowingSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    followUpSentAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
