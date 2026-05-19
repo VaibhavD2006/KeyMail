@@ -13,10 +13,15 @@ export async function getUserById(id: string) {
   }
 }
 
-export async function getUserByEmail(email: string) {
+export async function getUserByEmail(email: string, includePasswordHash = false) {
   try {
     await dbConnect();
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const query = User.findOne({ email: email.toLowerCase() });
+    if (includePasswordHash) {
+      query.select("+passwordHash");
+    }
+
+    const user = await query;
     return user;
   } catch (error) {
     console.error("Error getting user by email:", error);
@@ -40,6 +45,8 @@ export async function createUser(userData: any) {
     const user = await User.create({
       email: userData.email,
       name: userData.name || "User",
+      passwordHash: userData.passwordHash,
+      companyName: userData.companyName,
       plan: userData.plan || "free",
       settings: userData.settings || {}
     });
