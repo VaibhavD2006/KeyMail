@@ -3,6 +3,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { getUserByEmail, createUser } from "../db/queries-mongodb";
+import { verifyPassword } from "./password";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -21,17 +22,20 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
-        // In a real application, you would validate the credentials
-        // against your database here
+        const user = await getUserByEmail(credentials.email, true);
         
-        // For now, we'll just check if the user exists
-        const user = await getUserByEmail(credentials.email);
-        
-        if (!user) {
-          throw new Error("User not found");
+        if (!user?.passwordHash) {
+          return null;
         }
         
-        // In a real application, you would verify the password here
+        const isValidPassword = await verifyPassword(
+          credentials.password,
+          user.passwordHash
+        );
+
+        if (!isValidPassword) {
+          return null;
+        }
         
         return {
           id: user._id ? user._id.toString() : user.id,
