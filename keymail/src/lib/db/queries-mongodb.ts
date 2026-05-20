@@ -24,9 +24,20 @@ export async function getUserByEmail(email: string) {
   }
 }
 
+export async function getUserByEmailWithPasswordHash(email: string) {
+  try {
+    await dbConnect();
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+passwordHash');
+    return user;
+  } catch (error) {
+    console.error("Error getting user by email for auth:", error);
+    throw error;
+  }
+}
+
 export async function createUser(userData: any) {
   try {
-    console.log("Creating user with data:", userData);
+    console.log("Creating user with email:", userData.email);
     await dbConnect();
     
     // Check if user already exists
@@ -40,11 +51,13 @@ export async function createUser(userData: any) {
     const user = await User.create({
       email: userData.email,
       name: userData.name || "User",
+      passwordHash: userData.passwordHash,
+      companyName: userData.companyName,
       plan: userData.plan || "free",
       settings: userData.settings || {}
     });
     
-    console.log("User created successfully:", user);
+    console.log("User created successfully:", user.email);
     return user;
   } catch (error) {
     console.error("Error creating user:", error);

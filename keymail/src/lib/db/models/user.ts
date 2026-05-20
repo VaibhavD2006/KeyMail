@@ -49,6 +49,10 @@ const UserSchema = new Schema(
       required: [true, 'Name is required'],
       trim: true,
     },
+    passwordHash: {
+      type: String,
+      select: false,
+    },
     companyName: {
       type: String,
       trim: true,
