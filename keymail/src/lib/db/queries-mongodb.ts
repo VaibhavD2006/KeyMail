@@ -1,6 +1,8 @@
 import dbConnect from './mongodb';
 import { User, Client, Email, Template, Milestone, Listing, PropertyMatch, Showing } from './models';
 
+type ClientUpdateData = Record<string, unknown>;
+
 // User queries - Using MongoDB
 export async function getUserById(id: string) {
   try {
@@ -114,14 +116,14 @@ export async function getClientById(id: string, userId?: string) {
 
 export async function updateClient(
   id: string,
-  userIdOrUpdateData: string | Record<string, any>,
-  maybeUpdateData?: any
+  userIdOrUpdateData: string | ClientUpdateData,
+  maybeUpdateData?: ClientUpdateData
 ) {
   try {
     await dbConnect();
     const hasUserId = typeof userIdOrUpdateData === "string" && maybeUpdateData !== undefined;
     const query = hasUserId ? { _id: id, userId: userIdOrUpdateData } : { _id: id };
-    const updateData = hasUserId ? maybeUpdateData : userIdOrUpdateData;
+    const updateData = (hasUserId ? maybeUpdateData : userIdOrUpdateData) as ClientUpdateData;
     const safeUpdateData = { ...updateData };
     delete safeUpdateData._id;
     delete safeUpdateData.id;

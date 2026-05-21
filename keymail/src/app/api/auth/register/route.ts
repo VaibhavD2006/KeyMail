@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getUserByEmail, createUser } from "@/lib/db/queries-mongodb";
-import { ApiResponse } from "@/types";
 import { hashPassword } from "@/lib/auth/password";
 
 export async function POST(request: Request) {
