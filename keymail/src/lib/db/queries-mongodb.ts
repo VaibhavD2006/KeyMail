@@ -13,10 +13,17 @@ export async function getUserById(id: string) {
   }
 }
 
-export async function getUserByEmail(email: string) {
+export async function getUserByEmail(
+  email: string,
+  options: { includePasswordHash?: boolean } = {}
+) {
   try {
     await dbConnect();
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const query = User.findOne({ email: email.toLowerCase() });
+    if (options.includePasswordHash) {
+      query.select("+passwordHash");
+    }
+    const user = await query;
     return user;
   } catch (error) {
     console.error("Error getting user by email:", error);
@@ -26,13 +33,11 @@ export async function getUserByEmail(email: string) {
 
 export async function createUser(userData: any) {
   try {
-    console.log("Creating user with data:", userData);
     await dbConnect();
     
     // Check if user already exists
     const existingUser = await User.findOne({ email: userData.email.toLowerCase() });
     if (existingUser) {
-      console.log("User already exists:", existingUser);
       return existingUser;
     }
     
@@ -40,11 +45,12 @@ export async function createUser(userData: any) {
     const user = await User.create({
       email: userData.email,
       name: userData.name || "User",
+      companyName: userData.companyName || "",
+      passwordHash: userData.passwordHash,
       plan: userData.plan || "free",
       settings: userData.settings || {}
     });
     
-    console.log("User created successfully:", user);
     return user;
   } catch (error) {
     console.error("Error creating user:", error);
@@ -93,10 +99,12 @@ export async function getClientsByUserId(userId: string) {
   }
 }
 
-export async function getClientById(id: string) {
+export async function getClientById(id: string, userId?: string) {
   try {
     await dbConnect();
-    const client = await Client.findById(id);
+    const client = userId
+      ? await Client.findOne({ _id: id, userId })
+      : await Client.findById(id);
     return client;
   } catch (error) {
     console.error("Error getting client by ID:", error);
@@ -104,12 +112,23 @@ export async function getClientById(id: string) {
   }
 }
 
-export async function updateClient(id: string, updateData: any) {
+export async function updateClient(
+  id: string,
+  userIdOrUpdateData: string | Record<string, any>,
+  maybeUpdateData?: any
+) {
   try {
     await dbConnect();
-    const client = await Client.findByIdAndUpdate(
-      id,
-      { $set: updateData },
+    const hasUserId = typeof userIdOrUpdateData === "string" && maybeUpdateData !== undefined;
+    const query = hasUserId ? { _id: id, userId: userIdOrUpdateData } : { _id: id };
+    const updateData = hasUserId ? maybeUpdateData : userIdOrUpdateData;
+    const safeUpdateData = { ...updateData };
+    delete safeUpdateData._id;
+    delete safeUpdateData.id;
+    delete safeUpdateData.userId;
+    const client = await Client.findOneAndUpdate(
+      query,
+      { $set: safeUpdateData },
       { new: true }
     );
     return client;
@@ -119,10 +138,12 @@ export async function updateClient(id: string, updateData: any) {
   }
 }
 
-export async function deleteClient(id: string) {
+export async function deleteClient(id: string, userId?: string) {
   try {
     await dbConnect();
-    const client = await Client.findByIdAndDelete(id);
+    const client = userId
+      ? await Client.findOneAndDelete({ _id: id, userId })
+      : await Client.findByIdAndDelete(id);
     return client;
   } catch (error) {
     console.error("Error deleting client:", error);

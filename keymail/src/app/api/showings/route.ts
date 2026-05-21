@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     const enrichedShowings = await Promise.all(
       showingsResult.map(async (showing: any) => {
         const [client, listing] = await Promise.all([
-          getClientById(showing.clientId),
+          getClientById(showing.clientId, session.user.id),
           getListingById(showing.listingId),
         ]);
 
@@ -89,11 +89,11 @@ export async function POST(request: NextRequest) {
 
     // Verify client and listing belong to user
     const [client, listing] = await Promise.all([
-      getClientById(clientId),
+      getClientById(clientId, session.user.id),
       getListingById(listingId),
     ]);
 
-    if (!client || client.userId !== session.user.id) {
+    if (!client) {
       return NextResponse.json(
         { error: "Client not found" },
         { status: 404 }

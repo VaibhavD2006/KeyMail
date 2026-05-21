@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const enrichedMatches = await Promise.all(
       matches.map(async (match: any) => {
         const [client, listing] = await Promise.all([
-          getClientById(match.clientId),
+          getClientById(match.clientId, session.user.id),
           getListingById(match.listingId),
         ]);
 
@@ -74,20 +74,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Get client with preferences
-    const client = await getClientById(clientId);
+    const client = await getClientById(clientId, session.user.id);
 
     if (!client) {
       return NextResponse.json(
         { error: "Client not found" },
         { status: 404 }
-      );
-    }
-
-    // Verify client belongs to user
-    if (client.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 403 }
       );
     }
 
