@@ -153,7 +153,7 @@ export async function PUT(request: NextRequest) {
       status, 
       agentNotes, 
       completedAt,
-      followUpSent = false 
+      followUpSent 
     } = await request.json();
 
     if (!showingId) {
