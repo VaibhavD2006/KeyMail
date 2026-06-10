@@ -3,7 +3,13 @@ import { Client, Listing, PropertyMatch, Showing } from "./src/lib/db/models";
 
 // Run with: npx tsx test-mongo-serialization.ts
 
-function assertSerializedId(modelName: string, document: any) {
+type SerializableDocument = {
+  _id: { toString: () => string };
+  toObject: () => { id?: string };
+  toJSON: () => { id?: string };
+};
+
+function assertSerializedId(modelName: string, document: SerializableDocument) {
   const expectedId = document._id.toString();
   const objectValue = document.toObject();
   const jsonValue = document.toJSON();
