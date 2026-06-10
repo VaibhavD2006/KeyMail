@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import type { FilterQuery } from "mongoose";
 import { authOptions } from "@/lib/auth";
+import dbConnect from "@/lib/db/mongodb";
 import { 
-  getListingsByUserId, 
   saveListing, 
   getListingById, 
   getListingByMlsId 
@@ -26,7 +27,9 @@ export async function GET(request: NextRequest) {
     const neighborhood = searchParams.get("neighborhood");
 
     // Build MongoDB query
-    const query: any = { userId: session.user.id };
+    const query: FilterQuery<unknown> & {
+      price?: { $gte?: number; $lte?: number };
+    } = { userId: session.user.id };
 
     if (search) {
       query.address = { $regex: search, $options: 'i' };
@@ -50,6 +53,7 @@ export async function GET(request: NextRequest) {
       query.neighborhood = neighborhood;
     }
 
+    await dbConnect();
     const listingsResult = await Listing.find(query).sort({ createdAt: -1 });
 
     return NextResponse.json({
@@ -203,7 +207,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update listing
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (mlsId !== undefined) updateData.mlsId = mlsId;
     if (address !== undefined) updateData.address = address;
     if (city !== undefined) updateData.city = city;

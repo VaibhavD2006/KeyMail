@@ -9,7 +9,12 @@ import {
   getClientById,
   getListingById
 } from "@/lib/db/queries-mongodb";
-import { generateEmailContent } from "@/lib/ai/openai";
+
+type ShowingDocument = {
+  clientId: string;
+  listingId: string;
+  toObject: () => Record<string, unknown>;
+};
 
 // GET /api/showings - Get all showings for a user
 export async function GET(request: NextRequest) {
@@ -26,7 +31,7 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get("dateFrom");
     const dateTo = searchParams.get("dateTo");
 
-    const filters: any = {};
+    const filters: Record<string, string> = {};
     if (clientId) filters.clientId = clientId;
     if (listingId) filters.listingId = listingId;
     if (status) filters.status = status;
@@ -37,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     // Enrich with client and listing details
     const enrichedShowings = await Promise.all(
-      showingsResult.map(async (showing: any) => {
+      showingsResult.map(async (showing: ShowingDocument) => {
         const [client, listing] = await Promise.all([
           getClientById(showing.clientId),
           getListingById(showing.listingId),
@@ -153,7 +158,7 @@ export async function PUT(request: NextRequest) {
       status, 
       agentNotes, 
       completedAt,
-      followUpSent = false 
+      followUpSent 
     } = await request.json();
 
     if (!showingId) {
@@ -174,7 +179,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update showing
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (status) updateData.status = status;
     if (agentNotes !== undefined) updateData.agentNotes = agentNotes;
     if (completedAt) updateData.completedAt = new Date(completedAt);
