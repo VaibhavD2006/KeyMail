@@ -16,7 +16,7 @@ export async function getUserById(id: string) {
 export async function getUserByEmail(email: string) {
   try {
     await dbConnect();
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: email.toLowerCase() }).select("+passwordHash");
     return user;
   } catch (error) {
     console.error("Error getting user by email:", error);
@@ -26,7 +26,7 @@ export async function getUserByEmail(email: string) {
 
 export async function createUser(userData: any) {
   try {
-    console.log("Creating user with data:", userData);
+    console.log("Creating user with email:", userData.email);
     await dbConnect();
     
     // Check if user already exists
@@ -40,6 +40,8 @@ export async function createUser(userData: any) {
     const user = await User.create({
       email: userData.email,
       name: userData.name || "User",
+      companyName: userData.companyName || "",
+      passwordHash: userData.passwordHash,
       plan: userData.plan || "free",
       settings: userData.settings || {}
     });
@@ -68,6 +70,22 @@ export async function updateUser(id: string, userData: any) {
 }
 
 // Client queries
+export function buildClientOwnershipQuery(id: string, userId?: string) {
+  const query: any = { _id: id };
+  if (userId) query.userId = userId;
+  return query;
+}
+
+export function sanitizeClientUpdateData(updateData: any) {
+  const safeUpdateData = { ...updateData };
+  delete safeUpdateData._id;
+  delete safeUpdateData.id;
+  delete safeUpdateData.userId;
+  delete safeUpdateData.createdAt;
+  delete safeUpdateData.updatedAt;
+  return safeUpdateData;
+}
+
 export async function saveClient(clientData: any) {
   try {
     console.log("Saving client with data:", clientData);
@@ -93,10 +111,10 @@ export async function getClientsByUserId(userId: string) {
   }
 }
 
-export async function getClientById(id: string) {
+export async function getClientById(id: string, userId?: string) {
   try {
     await dbConnect();
-    const client = await Client.findById(id);
+    const client = await Client.findOne(buildClientOwnershipQuery(id, userId));
     return client;
   } catch (error) {
     console.error("Error getting client by ID:", error);
@@ -104,12 +122,12 @@ export async function getClientById(id: string) {
   }
 }
 
-export async function updateClient(id: string, updateData: any) {
+export async function updateClient(id: string, userId: string, updateData: any) {
   try {
     await dbConnect();
-    const client = await Client.findByIdAndUpdate(
-      id,
-      { $set: updateData },
+    const client = await Client.findOneAndUpdate(
+      buildClientOwnershipQuery(id, userId),
+      { $set: sanitizeClientUpdateData(updateData) },
       { new: true }
     );
     return client;
@@ -119,10 +137,10 @@ export async function updateClient(id: string, updateData: any) {
   }
 }
 
-export async function deleteClient(id: string) {
+export async function deleteClient(id: string, userId: string) {
   try {
     await dbConnect();
-    const client = await Client.findByIdAndDelete(id);
+    const client = await Client.findOneAndDelete(buildClientOwnershipQuery(id, userId));
     return client;
   } catch (error) {
     console.error("Error deleting client:", error);
