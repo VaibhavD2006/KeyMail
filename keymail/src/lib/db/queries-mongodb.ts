@@ -32,7 +32,7 @@ export async function createUser(userData: any) {
     // Check if user already exists
     const existingUser = await User.findOne({ email: userData.email.toLowerCase() });
     if (existingUser) {
-      console.log("User already exists:", existingUser);
+      console.log("User already exists for email:", userData.email);
       return existingUser;
     }
     
@@ -46,7 +46,7 @@ export async function createUser(userData: any) {
       settings: userData.settings || {}
     });
     
-    console.log("User created successfully:", user);
+    console.log("User created successfully with ID:", user._id);
     return user;
   } catch (error) {
     console.error("Error creating user:", error);
