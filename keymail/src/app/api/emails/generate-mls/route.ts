@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get client information
-    const client = await getClientById(body.clientId);
+    const client = await getClientById(body.clientId, userId);
     if (!client) {
       return NextResponse.json(
         { error: "Client not found" },
