@@ -1,10 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { showings, clients, listings, emailHistory, showingFeedback } from "@/lib/db/schema";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import {
+  getShowingsNeedingFollowUp,
+  getShowingById,
+  getClientById,
+  getListingById,
+  saveEmailHistory,
+  markShowingFollowUpSent,
+} from "@/lib/db/queries-mongodb";
 import { generateEmailContent } from "@/lib/ai/openai";
+
+function toPlainObject(document: any) {
+  return document?.toObject ? document.toObject() : document;
+}
+
+function buildShowingContext(
+  listing: any,
+  showing: any,
+  customMessage?: string,
+  includeFeedbackRequest?: boolean
+) {
+  return [
+    `Property: ${listing.address || "Unknown address"}, ${listing.city || ""} ${listing.state || ""} ${listing.zipCode || ""}`.trim(),
+    listing.price ? `Price: $${listing.price.toLocaleString()}` : null,
+    listing.mlsId ? `MLS ID: ${listing.mlsId}` : null,
+    showing.scheduledAt ? `Scheduled showing: ${new Date(showing.scheduledAt).toLocaleString()}` : null,
+    showing.completedAt ? `Completed showing: ${new Date(showing.completedAt).toLocaleString()}` : null,
+    showing.agentNotes ? `Agent notes: ${showing.agentNotes}` : null,
+    customMessage ? `Custom message: ${customMessage}` : null,
+    includeFeedbackRequest ? "Include a concise request for feedback about the showing." : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
 
 // GET /api/showings/follow-up - Get showings that need follow-up emails
 export async function GET(request: NextRequest) {
@@ -17,33 +46,24 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const daysAgo = parseInt(searchParams.get("daysAgo") || "1");
 
-    // Get showings completed in the last X days that haven't had follow-up emails sent
+    // Get recently completed showings that haven't had follow-up emails sent.
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
 
-    const showingsNeedingFollowUp = await db
-      .select()
-      .from(showings)
-      .where(and(
-        eq(showings.userId, session.user.id),
-        eq(showings.status, "completed"),
-        eq(showings.followUpSent, false),
-        isNull(showings.completedAt) // This will be updated to use proper date comparison
-      ))
-      .orderBy(desc(showings.completedAt));
+    const showingsNeedingFollowUp = await getShowingsNeedingFollowUp(session.user.id, daysAgo);
 
     // Enrich with client and listing details
     const enrichedShowings = await Promise.all(
-      showingsNeedingFollowUp.map(async (showing) => {
+      showingsNeedingFollowUp.map(async (showing: any) => {
         const [client, listing] = await Promise.all([
-          db.select().from(clients).where(eq(clients.id, showing.clientId)).limit(1),
-          db.select().from(listings).where(eq(listings.id, showing.listingId)).limit(1),
+          getClientById(showing.clientId),
+          getListingById(showing.listingId),
         ]);
 
         return {
-          ...showing,
-          client: client[0] || null,
-          listing: listing[0] || null,
+          ...toPlainObject(showing),
+          client: client ? toPlainObject(client) : null,
+          listing: listing ? toPlainObject(listing) : null,
         };
       })
     );
@@ -88,122 +108,88 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get showing with client and listing details
-    const showingResult = await db
-      .select()
-      .from(showings)
-      .where(and(
-        eq(showings.id, showingId),
-        eq(showings.userId, session.user.id)
-      ))
-      .limit(1);
+    const showing = await getShowingById(showingId);
 
-    if (showingResult.length === 0) {
+    if (!showing || showing.userId !== session.user.id) {
       return NextResponse.json(
         { error: "Showing not found" },
         { status: 404 }
       );
     }
 
-    const showing = showingResult[0];
-
     // Get client and listing details
     const [client, listing] = await Promise.all([
-      db.select().from(clients).where(eq(clients.id, showing.clientId)).limit(1),
-      db.select().from(listings).where(eq(listings.id, showing.listingId)).limit(1),
+      getClientById(showing.clientId),
+      getListingById(showing.listingId),
     ]);
 
-    if (client.length === 0 || listing.length === 0) {
+    if (
+      !client ||
+      !listing ||
+      client.userId !== session.user.id ||
+      listing.userId !== session.user.id
+    ) {
       return NextResponse.json(
         { error: "Client or listing not found" },
         { status: 404 }
       );
     }
 
+    const clientData = toPlainObject(client);
+    const listingData = toPlainObject(listing);
+    const showingData = toPlainObject(showing);
+
     // Generate follow-up email content
     const emailContent = await generateEmailContent({
-      clientName: client[0].name,
-      clientEmail: client[0].email,
+      client: {
+        name: clientData.name,
+        email: clientData.email,
+        relationship: clientData.relationshipLevel,
+        tags: clientData.tags,
+      },
       occasion: "showing_follow_up",
-      propertyDetails: {
-        mlsId: listing[0].mlsId,
-        address: listing[0].address,
-        city: listing[0].city,
-        state: listing[0].state,
-        zipCode: listing[0].zipCode,
-        price: listing[0].price,
-        bedrooms: listing[0].bedrooms,
-        bathrooms: listing[0].bathrooms,
-        squareFeet: listing[0].squareFeet,
-        propertyType: listing[0].propertyType,
-        neighborhood: listing[0].neighborhood,
-        features: listing[0].features,
-        description: listing[0].description,
-      },
-      showingDetails: {
-        scheduledAt: showing.scheduledAt,
-        completedAt: showing.completedAt,
-        agentNotes: showing.agentNotes,
-        status: showing.status,
-      },
-      customMessage,
       tone,
-      emailTemplate,
-      includeFeedbackRequest,
+      additionalContext: buildShowingContext(
+        listingData,
+        showingData,
+        customMessage || emailTemplate,
+        includeFeedbackRequest
+      ),
     });
 
     // Save email to history
-    const emailResult = await db
-      .insert(emailHistory)
-      .values({
-        userId: session.user.id,
-        clientId: showing.clientId,
-        subject: emailContent.subject,
-        content: emailContent.content,
-        status: "sent",
-        metadata: {
-          milestoneType: "showing_follow_up",
-          listingId: showing.listingId,
-          showingId: showing.id,
+    const emailResult = await saveEmailHistory({
+      userId: session.user.id,
+      clientId: showing.clientId,
+      occasion: "showing_follow_up",
+      subject: emailContent.subject,
+      generatedContent: emailContent.content,
+      editedContent: emailContent.content,
+      status: "sent",
+      sentDate: new Date(),
+      metadata: {
+        aiParameters: {
           tone,
-          customMessage,
-          includeFeedbackRequest,
+          style: "professional",
+          length: "medium",
         },
-      })
-      .returning();
+      },
+    });
 
     // Update showing to mark follow-up as sent
-    await db
-      .update(showings)
-      .set({
-        followUpSent: true,
-        followUpSentAt: new Date(),
-      })
-      .where(eq(showings.id, showingId));
-
-    // Create feedback request if requested
-    if (includeFeedbackRequest) {
-      await db
-        .insert(showingFeedback)
-        .values({
-          showingId: showing.id,
-          clientId: showing.clientId,
-          rating: null,
-          liked: null,
-          comments: null,
-          followUpNeeded: false,
-          nextAction: null,
-        });
+    const updatedShowing = await markShowingFollowUpSent(showingId, session.user.id);
+    if (!updatedShowing) {
+      throw new Error("Showing disappeared before follow-up could be marked sent");
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        emailId: emailResult[0].id,
+        emailId: emailResult._id?.toString() || emailResult.id,
         subject: emailContent.subject,
-        showingId: showing.id,
-        clientName: client[0].name,
-        listingAddress: listing[0].address,
+        showingId: showing._id?.toString() || showing.id,
+        clientName: clientData.name,
+        listingAddress: listingData.address,
         followUpSent: true,
         feedbackRequested: includeFeedbackRequest,
       },
